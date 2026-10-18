@@ -4,9 +4,7 @@ import {
   RotateCcw,
   Sparkles,
   Sliders,
-  Check,
-  ChevronRight,
-  Wind
+  Check
 } from 'lucide-react';
 import Header from './components/Header';
 import WeatherPanel from './components/WeatherPanel';
@@ -115,7 +113,6 @@ export default function App() {
       <Header
         isBackendOnline={isBackendOnline}
         latency={latency}
-        onOpenOptimize={() => setIsOptimizeOpen(true)}
         weatherContext={weatherContext}
         onHome={() => setPage('home')}
       />
@@ -153,11 +150,6 @@ export default function App() {
               <p className="mt-5 max-w-2xl text-sm leading-6 text-[#78716C] dark:text-[#A8A29E] sm:text-base sm:leading-7">
                 Local weather and machine settings, brought into one clear view. Tune the inputs and see the predicted result respond.
               </p>
-              <div className="mt-7 flex flex-wrap items-center gap-2.5">
-                <button onClick={() => setIsOptimizeOpen(true)} className="primary-button">
-                  <Sparkles className="h-3.5 w-3.5" /><span>Launch optimizer</span>
-                </button>
-              </div>
             </div>
 
             <div className="dashboard-flow relative mx-auto flex w-full max-w-2xl items-center justify-between gap-2 px-2 py-8 sm:px-5 lg:min-h-64 lg:px-2">
@@ -253,26 +245,6 @@ export default function App() {
               ))}
             </div>
 
-            {/* Quick Action Card */}
-            <div className="p-4 rounded-xl claude-card flex items-center justify-between">
-              <div>
-                <h4 className="text-xs font-semibold text-[#1F1E1D] dark:text-[#EDE8E1]">
-                  Counteract Weather Impact
-                </h4>
-                <p className="text-[11px] text-[#78716C] dark:text-[#A8A29E]">
-                  Run Scipy solver to eliminate thermal drift & stabilize Ra.
-                </p>
-              </div>
-              <button
-                disabled={!weatherContext}
-                onClick={() => setIsOptimizeOpen(true)}
-                className="px-3.5 py-1.5 rounded-lg bg-[#CC5A2B] hover:bg-[#B84A20] text-white text-xs font-semibold shadow-sm flex items-center gap-1 shrink-0 transition-all disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <span>Optimize</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
           </div>
 
           {/* Right Column: Model Predictions, Targets & Sensitivity (7 cols) */}
@@ -300,6 +272,17 @@ export default function App() {
           </div>
 
         </div>
+        </section>
+
+        <section className="dashboard-bottom-optimizer claude-card flex flex-col items-start gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+          <div>
+            <p className="target-index text-[#CC5A2B]">Ready to refine</p>
+            <h2 className="mt-1 font-serif text-xl font-semibold text-[#1F1E1D] dark:text-[#EDE8E1]">Find a stronger operating setup</h2>
+            <p className="mt-1 text-sm text-[#78716C] dark:text-[#A8A29E]">Run the optimizer against your selected process settings and weather.</p>
+          </div>
+          <button disabled={!weatherContext} onClick={() => setIsOptimizeOpen(true)} className="primary-button w-full shrink-0 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto">
+            <Sparkles className="h-3.5 w-3.5" /><span>Launch optimizer</span>
+          </button>
         </section>
 
       </main>

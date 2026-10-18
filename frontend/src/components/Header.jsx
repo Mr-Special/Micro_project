@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sun, Moon, Server, Sparkles, MapPin, ShieldAlert, House } from 'lucide-react';
+import { Sun, Moon, Server, MapPin, ShieldAlert, House } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import BackendSettingsModal from './BackendSettingsModal';
 
-export default function Header({ isBackendOnline, latency, onOpenOptimize, weatherContext, onHome }) {
+export default function Header({ isBackendOnline, latency, weatherContext, onHome }) {
   const { theme, toggleTheme } = useTheme();
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -78,22 +78,10 @@ export default function Header({ isBackendOnline, latency, onOpenOptimize, weath
               title="Click to configure Render backend API"
             >
               <span className={`w-2 h-2 rounded-full ${isBackendOnline ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-              <span className="hidden lg:inline text-[#78716C] dark:text-[#A8A29E]">
+              <span className="backend-status-label hidden xs:inline text-[#78716C] dark:text-[#A8A29E]">
                 {isBackendOnline ? `Backend · ${latency || 42} ms` : 'Local model'}
               </span>
               <Server className="w-3.5 h-3.5 text-[#78716C]" />
-            </motion.button>
-
-            {/* Launch Optimizer Button */}
-            <motion.button
-              disabled={!weatherContext}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={onOpenOptimize}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-semibold text-white bg-[#CC5A2B] hover:bg-[#B84A20] shadow-sm transition-all disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span className="hidden xs:inline">Optimize</span>
             </motion.button>
 
             {/* Theme Toggle Button */}
