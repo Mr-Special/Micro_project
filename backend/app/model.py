@@ -163,12 +163,18 @@ class MicroProcessSurrogate:
             t_eff = weather.temperature + weather.delta_temperature
             rh_eff = min(100.0, max(0.0, weather.relative_humidity + weather.delta_humidity))
             press_eff = max(850.0, weather.pressure + weather.delta_pressure)
+            wind_eff = max(0.0, weather.wind_speed + weather.delta_wind_speed)
+            precipitation_eff = max(0.0, weather.precipitation + weather.delta_precipitation)
+            cloud_eff = float(np.clip(weather.cloud_cover + weather.delta_cloud_cover, 0.0, 100.0))
             is_anomaly = weather.is_anomaly
             anomaly_name = weather.anomaly_type or "Weather Anomaly"
         else:
             t_eff = 20.0
             rh_eff = 50.0
             press_eff = 1013.25
+            wind_eff = 3.5
+            precipitation_eff = 0.0
+            cloud_eff = 0.0
             is_anomaly = False
             anomaly_name = None
 
@@ -187,7 +193,9 @@ class MicroProcessSurrogate:
         oxidation_risk = round(max(0.0, (rh_eff - 40.0) / 60.0), 2)
         
         # Stability index (100% is ideal standard conditions)
-        stability = 100.0 - 1.2 * abs(temp_delta) - 0.35 * max(0.0, rh_eff - 55.0) - 0.08 * abs(press_eff - 1013.25)
+        stability = (100.0 - 1.2 * abs(temp_delta) - 0.35 * max(0.0, rh_eff - 55.0)
+                     - 0.08 * abs(press_eff - 1013.25) - 0.3 * max(0.0, wind_eff - 3.5)
+                     - 0.2 * precipitation_eff - 0.02 * abs(cloud_eff - 50.0))
         stability = round(float(np.clip(stability, 45.0, 99.5)), 1)
 
         # Formulate advisory

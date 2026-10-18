@@ -7,6 +7,7 @@ export default {
   darkMode: 'class',
   theme: {
     extend: {
+      screens: { xs: '400px' },
       fontFamily: {
         sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'sans-serif'],
         serif: ['Newsreader', 'Georgia', '"Times New Roman"', 'serif'],

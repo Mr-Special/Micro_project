@@ -6,8 +6,8 @@ export default function LandingPage({ onOpenDashboard }) {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <div className="min-h-screen overflow-hidden bg-[#FAF8F5] text-[#1F1E1D] dark:bg-[#181715] dark:text-[#EDE8E1]">
-      <header className="relative z-10 border-b border-[#E8E2D8] dark:border-[#34312B]">
+    <div className="landing-page min-h-screen overflow-hidden bg-[#FAF8F5] text-[#1F1E1D] dark:bg-[#181715] dark:text-[#EDE8E1]">
+      <header className="landing-header relative z-10 border-b border-[#E8E2D8] dark:border-[#34312B]">
         <div className="mx-auto flex w-full items-center justify-between px-5 py-4 sm:px-8 lg:px-12 2xl:px-16">
           <a href="#home" className="flex items-center gap-3" aria-label="MicroOptix home">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#CC5A2B] font-serif text-xl text-white">µ</span>
@@ -29,8 +29,8 @@ export default function LandingPage({ onOpenDashboard }) {
       </header>
 
       <main id="home" className="mx-auto w-full px-5 sm:px-8 lg:px-12 2xl:px-16">
-        <section className="grid min-h-[min(760px,calc(100svh-72px))] items-center gap-10 py-12 lg:grid-cols-[1.02fr_0.98fr] lg:gap-12 lg:py-16">
-          <div className="relative z-10 max-w-3xl py-5 lg:py-10">
+        <section className="landing-hero grid min-h-[min(760px,calc(100svh-72px))] items-center gap-10 py-12 lg:grid-cols-[1.02fr_0.98fr] lg:gap-12 lg:py-16">
+          <div className="landing-copy relative z-10 max-w-3xl py-5 lg:py-10">
             <div className="mb-7 flex items-center gap-3 text-[11px] font-medium uppercase tracking-[0.2em] text-[#78716C] dark:text-[#A8A29E]">
               <span className="h-px w-9 bg-[#CC5A2B]" /> Process, in context <span className="font-mono tracking-normal text-[#CC5A2B]">01 / 03</span>
             </div>
@@ -54,7 +54,7 @@ export default function LandingPage({ onOpenDashboard }) {
             </div>
           </div>
 
-          <figure className="studio-art relative mx-auto flex min-h-[400px] w-full max-w-[760px] items-center justify-center overflow-hidden rounded-[2rem] border border-[#E8E2D8] bg-[#F3EFEA] dark:border-[#39362F] dark:bg-[#211F1C] sm:min-h-[500px] lg:min-h-[590px]">
+          <figure className="landing-art studio-art relative mx-auto flex min-h-[400px] w-full max-w-[760px] items-center justify-center overflow-hidden rounded-[2rem] border border-[#E8E2D8] bg-[#F3EFEA] dark:border-[#39362F] dark:bg-[#211F1C] sm:min-h-[500px] lg:min-h-[590px]">
             <div className="absolute left-7 top-7 z-10 flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.16em] text-[#78716C] dark:text-[#A8A29E]">
               <span className="h-1.5 w-1.5 rounded-full bg-[#CC5A2B]" /> Environmental study <span className="text-[#CC5A2B]">/ 24.07</span>
             </div>
@@ -95,9 +95,9 @@ export default function LandingPage({ onOpenDashboard }) {
           </figure>
         </section>
 
-        <section id="approach" className="border-t border-[#E8E2D8] py-12 dark:border-[#34312B] sm:py-16">
-          <div className="grid gap-8 lg:grid-cols-[0.7fr_1.3fr] lg:gap-16">
-            <div>
+        <section id="approach" className="landing-approach border-t border-[#E8E2D8] py-12 dark:border-[#34312B] sm:py-16">
+          <div className="landing-approach-grid grid gap-8 lg:grid-cols-[0.7fr_1.3fr] lg:gap-16">
+            <div className="landing-approach-intro">
               <p className="text-[11px] font-mono uppercase tracking-[0.18em] text-[#CC5A2B]">A considered workflow</p>
               <h2 className="mt-3 max-w-sm font-serif text-3xl leading-tight tracking-tight sm:text-4xl">From local air to a better setup.</h2>
             </div>
@@ -107,7 +107,7 @@ export default function LandingPage({ onOpenDashboard }) {
                 ['02', 'Read the conditions', 'Current temperature, humidity, pressure and wind inform the model.'],
                 ['03', 'Shape the process', 'Compare predicted targets and tune settings around the conditions.']
               ].map(([number, title, description]) => (
-                <article key={number} className="border-t border-[#E8E2D8] py-5 dark:border-[#34312B] sm:px-5 sm:first:pl-0 sm:last:pr-0 sm:first:border-t">
+                <article key={number} className="landing-step border-t border-[#E8E2D8] py-5 dark:border-[#34312B] sm:px-5 sm:first:pl-0 sm:last:pr-0 sm:first:border-t">
                   <span className="font-mono text-[10px] tracking-widest text-[#CC5A2B]">{number} / 03</span>
                   <h3 className="mt-4 font-serif text-xl">{title}</h3>
                   <p className="mt-2 text-sm leading-6 text-[#78716C] dark:text-[#A8A29E]">{description}</p>

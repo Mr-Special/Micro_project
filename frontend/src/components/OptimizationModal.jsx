@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import confetti from 'canvas-confetti';
 import {
   X,
   Sparkles,
@@ -56,15 +55,6 @@ export default function OptimizationModal({ isOpen, onClose, currentParameters, 
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
 
-  const triggerConfetti = () => {
-    confetti({
-      particleCount: 70,
-      spread: 60,
-      origin: { y: 0.6 },
-      colors: ['#CC5A2B', '#E07A5F', '#D97706', '#10B981']
-    });
-  };
-
   const handleRunOptimization = async () => {
     setIsOptimizing(true);
     setError(null);
@@ -77,7 +67,6 @@ export default function OptimizationModal({ isOpen, onClose, currentParameters, 
 
       const res = await fetchOptimization(currentParameters, objective, weatherContext);
       setResult(res.data);
-      triggerConfetti();
     } catch (err) {
       setError(err.message || 'Failed to converge optimization');
     } finally {
@@ -95,7 +84,7 @@ export default function OptimizationModal({ isOpen, onClose, currentParameters, 
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+        <div className="optimizer-overlay fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -110,16 +99,16 @@ export default function OptimizationModal({ isOpen, onClose, currentParameters, 
             initial={{ opacity: 0, scale: 0.95, y: 15 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 15 }}
-            className="relative w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-2xl bg-white dark:bg-[#22201D] border border-[#E8E2D8] dark:border-[#34312B] shadow-2xl p-6 sm:p-8 z-10"
+            className="optimizer-dialog relative w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-2xl bg-white dark:bg-[#22201D] border border-[#E8E2D8] dark:border-[#34312B] shadow-2xl p-5 sm:p-8 z-10"
           >
             {/* Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-[#E8E2D8] dark:border-[#34312B]">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#CC5A2B] text-white flex items-center justify-center font-serif text-lg font-bold">
+            <div className="optimizer-header flex items-start sm:items-center justify-between gap-3 pb-4 border-b border-[#E8E2D8] dark:border-[#34312B]">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="hidden h-10 w-10 shrink-0 rounded-xl bg-[#CC5A2B] text-white sm:flex items-center justify-center font-serif text-lg font-bold">
                   µ
                 </div>
                 <div>
-                  <h2 className="font-serif text-xl font-bold text-[#1F1E1D] dark:text-[#EDE8E1]">
+                  <h2 className="font-serif text-lg font-bold text-[#1F1E1D] dark:text-[#EDE8E1] sm:text-xl">
                     Atmospheric Process Optimizer
                   </h2>
                   <p className="text-xs text-[#78716C] dark:text-[#A8A29E]">
@@ -158,7 +147,7 @@ export default function OptimizationModal({ isOpen, onClose, currentParameters, 
                             : 'bg-white dark:bg-[#22201D] border-[#E8E2D8] dark:border-[#34312B] hover:border-[#CC5A2B]/40'
                         }`}
                       >
-                        <div className="flex items-center justify-between mb-1">
+                <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
                           <div className="flex items-center gap-2">
                             <Icon className={`w-4 h-4 ${isSelected ? 'text-[#CC5A2B]' : 'text-[#78716C]'}`} />
                             <span className="text-xs sm:text-sm font-semibold text-[#1F1E1D] dark:text-[#EDE8E1]">
@@ -183,13 +172,13 @@ export default function OptimizationModal({ isOpen, onClose, currentParameters, 
               </div>
 
               {/* Step 2: Algorithm & Execute */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-xl bg-[#FAF8F5] dark:bg-[#181715] border border-[#E8E2D8] dark:border-[#34312B]">
-                <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 sm:p-4 rounded-xl bg-[#FAF8F5] dark:bg-[#181715] border border-[#E8E2D8] dark:border-[#34312B]">
+                <div className="flex min-w-0 flex-col items-stretch gap-1.5 sm:flex-row sm:items-center sm:gap-2">
                   <span className="text-xs text-[#78716C]">Solver:</span>
                   <select
                     value={algorithm}
                     onChange={(e) => setAlgorithm(e.target.value)}
-                    className="text-xs rounded-lg px-2.5 py-1.5 bg-white dark:bg-[#22201D] border border-[#E8E2D8] dark:border-[#34312B] text-[#1F1E1D] dark:text-[#EDE8E1] focus:outline-none"
+                    className="w-full min-w-0 text-xs rounded-lg px-2.5 py-2 sm:w-auto bg-white dark:bg-[#22201D] border border-[#E8E2D8] dark:border-[#34312B] text-[#1F1E1D] dark:text-[#EDE8E1] focus:outline-none"
                   >
                     <option value="differential_evolution">Differential Evolution (Global Genetic)</option>
                     <option value="nelder_mead">Nelder-Mead (Adaptive Simplex)</option>

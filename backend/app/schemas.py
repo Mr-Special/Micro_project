@@ -20,12 +20,17 @@ class WeatherContext(BaseModel):
     relative_humidity: float = Field(50.0, description="Relative Humidity (%)")
     pressure: float = Field(1013.25, description="Barometric Pressure (hPa)")
     wind_speed: float = Field(3.5, description="Wind Speed (m/s)")
+    precipitation: float = Field(0.0, description="Current precipitation (mm)")
+    cloud_cover: float = Field(0.0, description="Cloud cover (%)")
     weather_condition: str = "Clear Sky"
     is_anomaly: bool = False
     anomaly_type: Optional[str] = None
     delta_temperature: float = 0.0
     delta_humidity: float = 0.0
     delta_pressure: float = 0.0
+    delta_wind_speed: float = 0.0
+    delta_precipitation: float = 0.0
+    delta_cloud_cover: float = 0.0
 
 class PredictionRequest(BaseModel):
     pulse_on_time: float = Field(35.0, description="Pulse-on Duration (µs)")

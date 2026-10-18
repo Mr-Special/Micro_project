@@ -135,6 +135,9 @@ export function calculateLocalPredictions(params, weather = null) {
   const tempEff = weather ? (weather.temperature + (weather.delta_temperature || 0)) : 20.0;
   const rhEff = weather ? Math.min(100, Math.max(0, weather.relative_humidity + (weather.delta_humidity || 0))) : 50.0;
   const pressEff = weather ? Math.max(850, weather.pressure + (weather.delta_pressure || 0)) : 1013.25;
+  const windEff = weather ? Math.max(0, (weather.wind_speed ?? 3.5) + (weather.delta_wind_speed || 0)) : 3.5;
+  const precipitationEff = weather ? Math.max(0, (weather.precipitation || 0) + (weather.delta_precipitation || 0)) : 0;
+  const cloudEff = weather ? Math.min(100, Math.max(0, (weather.cloud_cover || 0) + (weather.delta_cloud_cover || 0))) : 0;
   const isAnomaly = weather ? weather.is_anomaly : false;
   const anomalyName = weather?.anomaly_type || 'Atmospheric Anomaly';
 
@@ -165,7 +168,8 @@ export function calculateLocalPredictions(params, weather = null) {
   const thermalDrift = Number((0.12 * Math.abs(tempDelta)).toFixed(2));
   const viscosityShift = Number((-0.015 * tempDelta).toFixed(3));
   const oxidationRisk = Number((Math.max(0, (rhEff - 40.0) / 60.0)).toFixed(2));
-  let stability = 100.0 - 1.2 * Math.abs(tempDelta) - 0.35 * Math.max(0, rhEff - 55.0) - 0.08 * Math.abs(pressEff - 1013.25);
+  let stability = 100.0 - 1.2 * Math.abs(tempDelta) - 0.35 * Math.max(0, rhEff - 55.0) - 0.08 * Math.abs(pressEff - 1013.25)
+    - 0.3 * Math.max(0, windEff - 3.5) - 0.2 * precipitationEff - 0.02 * Math.abs(cloudEff - 50.0);
   stability = Number((Math.min(99.5, Math.max(45.0, stability))).toFixed(1));
 
   let advisory = 'Normal ambient atmospheric conditions. Machine operating at nominal precision stability.';

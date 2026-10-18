@@ -48,7 +48,7 @@ export default function SensitivityChart({ currentParameters, weatherContext }) 
   }, data[0] || {});
 
   return (
-    <div className="claude-card p-5 sm:p-6 transition-all duration-150">
+    <div className="sensitivity-card claude-card p-4 sm:p-6 transition-all duration-150">
       
       {/* Header and Parameter Selector */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-[#E8E2D8] dark:border-[#34312B]">
@@ -89,8 +89,8 @@ export default function SensitivityChart({ currentParameters, weatherContext }) 
       </div>
 
       {/* Sweep summary banner */}
-      <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-[#FAF8F5] dark:bg-[#181715] border border-[#E8E2D8] dark:border-[#34312B] text-xs mb-3">
-        <span className="text-[#78716C] flex items-center gap-1.5">
+      <div className="sensitivity-summary flex flex-col items-start justify-between gap-1 px-3 py-2 rounded-xl bg-[#FAF8F5] dark:bg-[#181715] border border-[#E8E2D8] dark:border-[#34312B] text-xs mb-3 sm:flex-row sm:items-center">
+        <span className="min-w-0 text-[#78716C] flex items-center gap-1.5">
           <SlidersHorizontal className="w-3.5 h-3.5 text-[#CC5A2B]" />
           Sweeping <strong className="text-[#1F1E1D] dark:text-[#EDE8E1]">{currentConfig.label}</strong>
         </span>

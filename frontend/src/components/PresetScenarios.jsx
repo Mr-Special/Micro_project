@@ -26,7 +26,7 @@ export default function PresetScenarios({ onSelectPreset, currentParameters }) {
         <span className="text-xs text-[#78716C] dark:text-[#A8A29E]">Select a starting point</span>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5 xl:gap-4">
+      <div className="preset-grid grid grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-3 xl:grid-cols-5 xl:gap-4">
         {PRESETS_DATA.map((preset) => {
           const Icon = ICONS[preset.id] || Gauge;
           const active = isPresetActive(preset.params);
@@ -37,7 +37,7 @@ export default function PresetScenarios({ onSelectPreset, currentParameters }) {
               key={preset.id}
               onClick={() => onSelectPreset(preset.params)}
               aria-pressed={active}
-              className={`group relative w-full overflow-hidden rounded-2xl border p-4 text-left transition-all duration-200 hover:-translate-y-0.5 sm:p-5 ${preset.id === 'balanced_standard' ? 'xl:col-span-2' : 'xl:col-span-1'} ${
+              className={`group relative w-full overflow-hidden rounded-2xl border p-3 text-left transition-all duration-200 hover:-translate-y-0.5 sm:p-5 ${preset.id === 'balanced_standard' ? 'xl:col-span-2' : 'xl:col-span-1'} ${
                 active
                   ? 'bg-white dark:bg-[#22201D] border-[#CC5A2B] shadow-[0_8px_28px_-16px_rgba(204,90,43,0.45)]'
                   : 'bg-white dark:bg-[#22201D] border-[#E8E2D8] dark:border-[#34312B] hover:border-[#CC5A2B]/50'

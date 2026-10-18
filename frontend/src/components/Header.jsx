@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sun, Moon, Server, Sparkles, MapPin, ShieldAlert } from 'lucide-react';
+import { Sun, Moon, Server, Sparkles, MapPin, ShieldAlert, House } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import BackendSettingsModal from './BackendSettingsModal';
 
@@ -10,8 +10,8 @@ export default function Header({ isBackendOnline, latency, onOpenOptimize, weath
 
   return (
     <>
-      <header className="sticky top-0 z-30 w-full border-b border-[#E8E2D8] dark:border-[#34312B] bg-[#FAF8F5]/90 dark:bg-[#181715]/90 backdrop-blur-md transition-colors duration-200">
-        <div className="mx-auto flex w-full max-w-none items-center justify-between px-4 py-3.5 sm:px-7 lg:px-10 2xl:px-14">
+      <header className="dashboard-header sticky top-0 z-30 w-full border-b border-[#E8E2D8] dark:border-[#34312B] bg-[#FAF8F5]/90 dark:bg-[#181715]/90 backdrop-blur-md transition-colors duration-200">
+        <div className="dashboard-header-inner mx-auto flex w-full max-w-none items-center justify-between px-4 py-3.5 sm:px-7 lg:px-10 2xl:px-14">
           
           {/* Brand Logo & Name (Claude Minimalist styling) */}
           <div className="flex items-center gap-3">
@@ -28,7 +28,7 @@ export default function Header({ isBackendOnline, latency, onOpenOptimize, weath
                 <span className="font-serif text-xl font-bold tracking-tight text-[#1F1E1D] dark:text-[#EDE8E1]">
                   MicroOptix
                 </span>
-                <span className="px-2 py-0.5 text-[10px] font-mono uppercase tracking-widest rounded-md bg-[#FAF8F5] dark:bg-[#292723] text-[#78716C] dark:text-[#A8A29E] border border-[#E8E2D8] dark:border-[#34312B]">
+                <span className="dashboard-brand-tag hidden px-2 py-0.5 text-[10px] font-mono uppercase tracking-widest rounded-md bg-[#FAF8F5] dark:bg-[#292723] text-[#78716C] dark:text-[#A8A29E] border border-[#E8E2D8] dark:border-[#34312B] xs:inline">
                   Studio
                 </span>
               </div>
@@ -44,9 +44,11 @@ export default function Header({ isBackendOnline, latency, onOpenOptimize, weath
             <button
               type="button"
               onClick={onHome}
-              className="px-2 py-1.5 text-xs font-medium text-[#78716C] hover:text-[#CC5A2B]"
+              className="dashboard-home-button px-1.5 py-2 text-xs font-medium text-[#78716C] hover:text-[#CC5A2B] sm:px-2"
+              aria-label="Home"
             >
-              Home
+              <span className="hidden xs:inline">Home</span>
+              <House className="h-4 w-4 xs:hidden" />
             </button>
             
             {/* Active Weather / Anomaly Indicator Pill */}
@@ -72,7 +74,7 @@ export default function Header({ isBackendOnline, latency, onOpenOptimize, weath
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setSettingsOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium border border-[#E8E2D8] dark:border-[#34312B] bg-white dark:bg-[#22201D] text-[#1F1E1D] dark:text-[#EDE8E1] hover:bg-[#F3EFEA] dark:hover:bg-[#292723] transition-colors"
+              className="flex items-center gap-2 px-2 py-2 rounded-xl text-xs font-medium border border-[#E8E2D8] dark:border-[#34312B] bg-white dark:bg-[#22201D] text-[#1F1E1D] dark:text-[#EDE8E1] hover:bg-[#F3EFEA] dark:hover:bg-[#292723] transition-colors sm:px-3"
               title="Click to configure Render backend API"
             >
               <span className={`w-2 h-2 rounded-full ${isBackendOnline ? 'bg-emerald-500' : 'bg-amber-500'}`} />
@@ -91,7 +93,7 @@ export default function Header({ isBackendOnline, latency, onOpenOptimize, weath
               className="flex items-center gap-1.5 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-semibold text-white bg-[#CC5A2B] hover:bg-[#B84A20] shadow-sm transition-all disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Optimize</span>
+              <span className="hidden xs:inline">Optimize</span>
             </motion.button>
 
             {/* Theme Toggle Button */}

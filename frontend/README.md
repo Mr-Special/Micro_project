@@ -1,6 +1,6 @@
 # MicroOptix AI - Executive Frontend (Vercel Ready)
 
-Modern, classy, and responsive web frontend with executive aesthetics and 60fps Framer Motion animations. Built with React, Vite, Tailwind CSS, Recharts, and Canvas Confetti.
+Modern, classy, and responsive web frontend with executive aesthetics and Framer Motion animations. Built with React, Vite, Tailwind CSS, and Recharts.
 
 ---
 
@@ -45,7 +45,7 @@ vercel
 
 ## 🎨 Features & Highlights
 - **Clean Minimalist Executive Aesthetic**: Switchable Dark/Light themes with subtle luxury shadows, frosted glass panels, and typography.
-- **Buttery 60fps Animations**: Powered by Framer Motion, with spring number lerping, rotating icons, glowing indicators, and particle celebration confetti.
+- **Subtle Interface Motion**: Powered by Framer Motion, with transitions and responsive interaction feedback.
 - **Smart Backend Fallback**: Built-in physics-informed surrogate guarantees zero latency and 100% availability even while Render is waking up.
 - **Dynamic Response Surface Sweeps**: Dual-axis sensitivity curve with current-point indicator.
 - **Multi-Objective Optimization Engine**: Choose between Balanced Pareto, Peak MRR, Ultra-Fine Ra, or Custom Target, running Scipy Differential Evolution.

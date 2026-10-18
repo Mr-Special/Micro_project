@@ -54,36 +54,11 @@ export const CITIES_BY_STATE = {
 };
 
 export const ANOMALY_PRESETS = [
-  {
-    id: 'super_heatwave',
-    name: '🔥 Super-Heatwave (+14°C)',
-    description: 'Extreme thermal spike inducing rapid workpiece thermal expansion and dielectric cooling deficit.',
-    deltas: { temp: 14.0, humidity: -20.0, pressure: -6.0 }
-  },
-  {
-    id: 'arctic_freeze',
-    name: '❄️ Arctic Polar Vortex (-22°C)',
-    description: 'Severe freezing plunge increasing dielectric fluid kinematic viscosity and lowering initial spark ionization.',
-    deltas: { temp: -22.0, humidity: -10.0, pressure: 12.0 }
-  },
-  {
-    id: 'monsoon_cyclone',
-    name: '⛈️ Monsoon & Cyclonic Squall',
-    description: 'Torrential atmospheric humidity surge (98% RH) and barometric depression provoking oxidation and gap instability.',
-    deltas: { temp: 4.0, humidity: 45.0, pressure: -48.0 }
-  },
-  {
-    id: 'barometric_drop',
-    name: '🌪️ Low Pressure Depression (-65 hPa)',
-    description: 'Sudden barometric vacuum drop altering dielectric cavitation bubble collapse and debris expulsion.',
-    deltas: { temp: -2.0, humidity: 15.0, pressure: -65.0 }
-  },
-  {
-    id: 'desert_sirocco',
-    name: '🏜️ Saharan Sirocco Drought',
-    description: 'Desiccating arid thermal winds causing static particulate accumulation and thermal degradation.',
-    deltas: { temp: 18.0, humidity: -38.0, pressure: -12.0 }
-  }
+  { id: 'drought', name: 'Drought', description: 'Hot, dry conditions with reduced humidity and a small pressure drop.', deltas: { temp: 8, humidity: -30, pressure: -8, wind: 3, precipitation: 0, cloud: -35 } },
+  { id: 'flood', name: 'Flood / Extreme rain', description: 'Very humid, stormy conditions. Rainfall itself is represented as a scenario estimate.', deltas: { temp: 2, humidity: 35, pressure: -25, wind: 5, precipitation: 12, cloud: 60 } },
+  { id: 'heatwave', name: 'Heatwave', description: 'Sustained high temperatures with drier air and lower pressure.', deltas: { temp: 12, humidity: -15, pressure: -12, wind: 1, precipitation: 0, cloud: -30 } },
+  { id: 'coldwave', name: 'Cold wave', description: 'A sharp temperature drop with drier air and higher pressure.', deltas: { temp: -12, humidity: -10, pressure: 10, wind: 2, precipitation: 0, cloud: 10 } },
+  { id: 'cyclone', name: 'Cyclone', description: 'Warm, moisture-heavy air with a pronounced pressure drop.', deltas: { temp: 4, humidity: 40, pressure: -45, wind: 18, precipitation: 15, cloud: 70 } }
 ];
 
 export function decodeWmoWeather(code) {
@@ -111,7 +86,7 @@ export function decodeWmoWeather(code) {
 
 export async function fetchLiveWeather(lat, lon, cityName = 'City', location = {}) {
   try {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,surface_pressure,wind_speed_10m,weather_code&timezone=auto`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,surface_pressure,wind_speed_10m,precipitation,cloud_cover,weather_code&wind_speed_unit=ms&timezone=auto`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`Weather API returned ${res.status}`);
     const data = await res.json();
@@ -127,6 +102,8 @@ export async function fetchLiveWeather(lat, lon, cityName = 'City', location = {
       relative_humidity: Number(cur.relative_humidity_2m.toFixed(0)),
       pressure: Number(cur.surface_pressure.toFixed(1)),
       wind_speed: Number(cur.wind_speed_10m.toFixed(1)),
+      precipitation: Number((cur.precipitation || 0).toFixed(1)),
+      cloud_cover: Number(cur.cloud_cover || 0),
       weather_code: cur.weather_code,
       weather_condition: wmo.label,
       icon: wmo.icon,
@@ -144,6 +121,8 @@ export async function fetchLiveWeather(lat, lon, cityName = 'City', location = {
       relative_humidity: 52,
       pressure: 1014.2,
       wind_speed: 3.4,
+      precipitation: 0,
+      cloud_cover: 0,
       weather_code: 0,
       weather_condition: 'Clear Sky',
       icon: 'Sun',

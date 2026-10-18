@@ -31,18 +31,26 @@
 
 /* Claude Minimalist Card & Panel Styling */
 .claude-card {
-  background: #FFFFFF;
+  background: linear-gradient(145deg, #FFFFFF 0%, #FFFEFC 100%);
   border: 1px solid #E8E2D8;
-  border-radius: 1rem;
-  box-shadow: 0 1px 3px rgba(31, 30, 29, 0.035);
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+  border-radius: 1.125rem;
+  box-shadow: 0 2px 5px rgba(31, 30, 29, 0.025), 0 14px 36px -28px rgba(31, 30, 29, 0.24);
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 }
+
+.dashboard-main { isolation: isolate; }
+.dashboard-section-card { min-width: 0; }
+.dashboard-section .claude-card:hover { border-color: rgba(204, 90, 43, 0.28); }
+.dashboard-intro { box-shadow: 0 18px 64px -42px rgba(83, 49, 32, 0.32); }
+.dashboard-flow { min-height: 13rem; }
 
 .dark .claude-card {
   background: linear-gradient(145deg, #24221F 0%, #211F1C 100%);
   border: 1px solid #39362F;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.18), 0 14px 36px -28px rgba(0, 0, 0, 0.7);
 }
+
+.dark .dashboard-section .claude-card:hover { border-color: rgba(224, 122, 95, 0.4); }
 
 .dashboard-intro {
   background:
@@ -52,7 +60,8 @@
 
 .dashboard-canvas {
   background:
-    radial-gradient(ellipse at 94% 4%, rgba(204, 90, 43, 0.045), transparent 28%),
+    radial-gradient(ellipse at 94% 4%, rgba(204, 90, 43, 0.055), transparent 28%),
+    radial-gradient(ellipse at 5% 46%, rgba(204, 90, 43, 0.025), transparent 27%),
     #FAF8F5;
 }
 
@@ -74,6 +83,87 @@
     linear-gradient(rgba(120, 113, 108, 0.065) 1px, transparent 1px),
     linear-gradient(90deg, rgba(120, 113, 108, 0.065) 1px, transparent 1px);
   background-size: auto, 34px 34px, 34px 34px;
+}
+
+/* Landing page entrance: a quiet editorial reveal with a living process signal. */
+.landing-header {
+  animation: landing-header-in 520ms ease-out both;
+}
+
+.landing-copy {
+  animation: landing-rise 760ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.landing-art {
+  animation: landing-art-in 900ms cubic-bezier(0.2, 0.7, 0.2, 1) 100ms both;
+}
+
+.landing-approach-grid > * {
+  animation: landing-rise 680ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.landing-approach-intro { animation-delay: 100ms; }
+.landing-step:nth-child(1) { animation-delay: 180ms; }
+.landing-step:nth-child(2) { animation-delay: 280ms; }
+.landing-step:nth-child(3) { animation-delay: 380ms; }
+.landing-step { transition: border-color 220ms ease, padding 220ms ease; }
+.landing-step:hover { border-color: rgba(204, 90, 43, 0.55); }
+.landing-step h3 { transition: color 220ms ease; }
+.landing-step:hover h3 { color: #CC5A2B; }
+
+@keyframes landing-header-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.landing-art svg > circle:first-of-type {
+  transform-origin: 320px 250px;
+  animation: landing-orbit 18s linear infinite;
+}
+
+.landing-art svg path:nth-of-type(1) {
+  stroke-dasharray: 560;
+  stroke-dashoffset: 560;
+  animation: landing-signal 1.8s ease-out 650ms forwards;
+}
+
+.landing-art svg > circle:nth-of-type(3) {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: landing-pulse 3.2s ease-in-out 1.5s infinite;
+}
+
+@keyframes landing-rise {
+  from { opacity: 0; transform: translateY(22px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes landing-art-in {
+  from { opacity: 0; transform: translateY(18px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes landing-orbit {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes landing-signal {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes landing-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.72; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-header, .landing-copy, .landing-art, .landing-approach-grid > *,
+  .landing-art svg > circle:first-of-type,
+  .landing-art svg path:nth-of-type(1), .landing-art svg > circle:nth-of-type(3) {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .landing-step, .landing-step h3 { transition: none; }
 }
 
 .dark .studio-art {
@@ -251,4 +341,201 @@ input[type="range"]::-moz-range-thumb {
 .dark input[type="range"]::-moz-range-thumb {
   background: #E07A5F;
   border: 2px solid #22201D;
+}
+
+/* Shared layout safeguards for narrow phones, tablets and zoomed views. */
+@layer base {
+  html, body, #root { min-height: 100%; }
+  body { min-width: 320px; }
+  img, svg, video, canvas { max-width: 100%; }
+  button, a, input, select { touch-action: manipulation; }
+}
+
+.dashboard-main,
+.dashboard-section,
+.dashboard-section-card,
+.prediction-panel,
+.landing-hero,
+.landing-approach,
+.landing-copy { min-width: 0; }
+
+.dashboard-main { width: min(100%, 1680px); }
+.landing-hero, .landing-approach, #home { max-width: 1680px; margin-inline: auto; }
+.dashboard-section-card { overflow-wrap: anywhere; }
+.target-card, .claude-card { min-width: 0; }
+
+@media (max-width: 639px) {
+  .dashboard-main { padding-inline: 1rem; padding-block: 1.25rem; gap: 2rem; }
+  .dashboard-intro { border-radius: 1.25rem; }
+  .dashboard-intro h1 { font-size: clamp(2.35rem, 11vw, 3.5rem); }
+  .dashboard-flow { min-height: 11rem; }
+  .dashboard-flow > div { min-width: 0; }
+  .dashboard-section-card { padding: 1rem; }
+  .landing-hero { min-height: auto; gap: 1.5rem; padding-block: 2.25rem; }
+  .landing-copy { padding-block: 0.25rem; }
+  .landing-copy h1 { font-size: clamp(2.8rem, 13vw, 4.5rem); }
+  .landing-art { min-height: clamp(280px, 90vw, 420px); border-radius: 1.25rem; }
+  .landing-art svg { padding: 2.5rem 1rem; }
+  .landing-art > div { max-width: 46%; }
+  .landing-art > div:nth-child(1) { left: 1rem; top: 1rem; }
+  .landing-art > div:nth-child(2) { left: 1rem; bottom: 1rem; }
+  .landing-art > div:nth-child(3) { right: 1rem; top: 1rem; }
+  .landing-art > div:nth-child(5) { right: 1rem; bottom: 1rem; padding: 0.75rem; }
+  .landing-approach { padding-block: 2.5rem; }
+  .landing-approach-grid { gap: 1.5rem; }
+  .landing-approach-grid > div:last-child { grid-template-columns: 1fr; }
+  .landing-step { padding-block: 1rem; }
+  .landing-step:hover { padding-inline: 0; }
+  .target-value { font-size: clamp(2.4rem, 12vw, 3rem); }
+  .target-card { min-height: 205px; padding: 1rem; }
+  .mrr-feature { min-height: 300px; }
+  .prediction-panel > header { align-items: flex-start; }
+  .prediction-panel > header > div:last-child { flex-wrap: wrap; }
+  .dashboard-section > div:first-child > p:last-child { max-width: 100%; }
+}
+
+@media (max-width: 399px) {
+  .landing-header > div { padding-inline: 1rem; }
+  .landing-header nav { gap: 0.5rem; }
+  .landing-header nav > button:last-child { padding-inline: 0.8rem; }
+  .dashboard-main { padding-inline: 0.75rem; }
+  .dashboard-main h2 { font-size: 1.45rem; }
+  .dashboard-flow { gap: 0.25rem; padding-inline: 0; }
+  .dashboard-flow > div { font-size: 0.9rem; }
+  .dashboard-flow > div > div { height: 2.75rem; width: 2.75rem; }
+  .dashboard-flow > div > span:last-child { font-size: 0.65rem; }
+  .dashboard-flow > div > span:nth-last-child(1) { max-width: 5.5rem; }
+  .dashboard-canvas header > div { padding-inline: 0.75rem; }
+  .dashboard-canvas header button { gap: 0.3rem; }
+  .dashboard-canvas header button:last-child { padding-inline: 0.5rem; }
+  .weather-panel, .dashboard-section-card { border-radius: 1rem; }
+}
+
+@media (hover: none) {
+  .claude-card:hover, .landing-step:hover, .target-card:hover { transform: none; }
+}
+
+@media (max-width: 639px) {
+  body { overflow-x: hidden; }
+  .landing-header > div { gap: 0.5rem; padding-inline: 0.75rem; }
+  .landing-header > div > a { gap: 0.5rem; }
+  .landing-header > div > a > span:first-child { width: 2rem; height: 2rem; flex: 0 0 2rem; }
+  .landing-header > div > a > span:last-child > span:first-child { font-size: 1rem; }
+  .landing-header nav { gap: 0.4rem; }
+  .landing-header nav > button:last-child { gap: 0.35rem; padding-inline: 0.75rem; font-size: 0.75rem; white-space: nowrap; }
+  .landing-header nav > button:first-of-type { padding: 0.55rem; }
+  .dashboard-main { padding: 1rem 0.875rem 2rem; }
+  .dashboard-main > .dashboard-intro,
+  .dashboard-main > .dashboard-section { margin-top: 1.5rem; }
+  .dashboard-intro > .relative.z-10 { padding: 1.25rem; gap: 1.25rem; }
+  .dashboard-intro h1 { max-width: 14ch; font-size: clamp(2.35rem, 10.8vw, 3.5rem); line-height: 1.02; }
+  .dashboard-intro p { max-width: 42ch; }
+
+  /* Replace the staggered desktop process graphic with a compact phone flow. */
+  .dashboard-flow {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 0.5rem;
+    min-height: 0;
+    padding: 0.75rem 0 0;
+    background: none;
+  }
+  .dark .dashboard-flow { background: none; }
+  .dashboard-flow > div:nth-child(-n+3) { display: none; }
+  .dashboard-flow > div:nth-child(n+4) {
+    min-width: 0;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.65rem 0.25rem;
+    border: 1px solid #E8E2D8;
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.72);
+    text-align: center;
+    transform: none;
+  }
+  .dark .dashboard-flow > div:nth-child(n+4) { border-color: #39362F; background: rgba(34, 32, 29, 0.72); }
+  .dashboard-flow > div:nth-child(n+4) > div { width: 2.75rem; height: 2.75rem; }
+  .dashboard-flow > div:nth-child(n+4) > span:nth-last-child(1) { max-width: 100%; font-size: 0.62rem; line-height: 1.25; }
+  .dashboard-flow > div:nth-child(n+4) > span:nth-last-child(2) { font-size: 0.9rem; line-height: 1.1; }
+
+  .dashboard-header-inner { gap: 0.4rem; padding: 0.55rem 0.75rem; }
+  .dashboard-header-inner > div:first-child { min-width: 0; gap: 0.5rem; }
+  .dashboard-header-inner > div:first-child > div:last-child { min-width: 0; }
+  .dashboard-header-inner > div:first-child .font-serif { font-size: 1.05rem; }
+  .dashboard-header-inner > div:last-child { flex-shrink: 0; gap: 0.25rem; }
+  .dashboard-header-inner button { min-height: 2.5rem; }
+  .dashboard-home-button { display: inline-flex; width: 2rem; align-items: center; justify-content: center; }
+  .dashboard-brand-tag { display: none; }
+  .dashboard-header-inner > div:last-child button:nth-last-child(3) { padding-inline: 0.5rem; }
+
+  .weather-panel { padding: 1rem; border-radius: 1.1rem; }
+  .weather-panel > div:first-child { align-items: stretch; gap: 0.75rem; }
+  .weather-panel > div:first-child > div:first-child { min-width: 0; }
+  .weather-panel > div:first-child h3 { font-size: 1.05rem; }
+  .weather-mode-switch { width: 100%; }
+  .weather-mode-switch button { flex: 1; justify-content: center; padding-inline: 0.5rem; white-space: nowrap; }
+  .weather-location-layout > section { order: 2; }
+  .weather-location-layout > div { order: 1; }
+  .weather-location-layout select { min-height: 2.75rem; }
+  .weather-location-layout > div > div:first-child { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .weather-location-layout > div > div:first-child label { width: 100%; }
+  .weather-location-layout > div > div:last-child { gap: 0.5rem; }
+  .weather-location-layout > div > div:last-child > div { padding: 0.7rem; }
+  .weather-panel .weather-anomaly { min-width: 0; }
+  .weather-panel input[type="range"] { min-height: 2rem; }
+
+  .preset-grid { gap: 0.55rem; }
+  .preset-grid > button { min-height: 9rem; padding: 0.7rem; border-radius: 1rem; }
+  .preset-grid > button > div:first-child { margin-bottom: 0.6rem; }
+  .preset-grid h4 { white-space: normal; font-size: 0.9rem; line-height: 1.15; }
+  .preset-grid p { font-size: 0.68rem; line-height: 1.3rem; }
+
+  .dashboard-section-card { padding: 0.9rem; }
+  .dashboard-section-card .claude-card { padding: 0.85rem; }
+  .target-card { min-height: 0; }
+  .prediction-panel > header { padding: 1rem; }
+  .prediction-panel > header h3 { font-size: 1.25rem; }
+  .prediction-panel > div { padding: 0.75rem; }
+  .mrr-feature { min-height: 17rem; }
+  .sensitivity-card { padding: 1rem; }
+  .sensitivity-card h3 { font-size: 0.95rem; line-height: 1.25; }
+  .sensitivity-card > div:first-child { align-items: stretch; }
+  .sensitivity-card > div:first-child > div:last-child { min-width: 0; }
+  .sensitivity-card > div:first-child > div:last-child p { line-height: 1.35; }
+  .sensitivity-card > div:nth-child(2) { align-items: flex-start; }
+  .sensitivity-card > div:nth-child(2) > span:last-child { white-space: normal; }
+  .sensitivity-card > div:last-child { height: 13rem; }
+
+  .optimizer-overlay { align-items: stretch; padding: 0; }
+  .optimizer-dialog { width: 100%; max-width: none; max-height: 100dvh; min-height: 100dvh; padding: 1rem; border-radius: 0; }
+  .optimizer-header { gap: 0.5rem; }
+  .optimizer-header h2 { font-size: 1.05rem; line-height: 1.2; }
+  .optimizer-header p { font-size: 0.68rem; line-height: 1.35; }
+  .optimizer-dialog > div:nth-child(2) { padding-block: 1rem; }
+  .optimizer-dialog [role="button"] { min-width: 0; }
+  .optimizer-dialog .grid.grid-cols-2.sm\:grid-cols-5 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .optimizer-dialog .grid.grid-cols-1.sm\:grid-cols-3 { grid-template-columns: 1fr; }
+  .optimizer-dialog .recharts-wrapper { max-width: 100%; }
+  .optimizer-dialog footer,
+  .optimizer-dialog > div:last-child { gap: 0.75rem; }
+
+  .dashboard-canvas footer > div > div:first-child { flex-wrap: wrap; justify-content: center; }
+  .landing-page footer > div,
+  .dashboard-canvas footer > div { flex-wrap: wrap; justify-content: center; text-align: center; }
+}
+
+@media (max-width: 359px) {
+  .dashboard-header-inner { padding-inline: 0.5rem; }
+  .dashboard-header-inner > div:first-child { gap: 0.35rem; }
+  .dashboard-header-inner > div:first-child > div:first-child { width: 2rem; height: 2rem; }
+  .dashboard-header-inner > div:first-child .font-serif { font-size: 0.95rem; }
+  .dashboard-header-inner > div:last-child { gap: 0.1rem; }
+  .dashboard-header-inner > div:last-child button { padding-inline: 0.4rem; }
+  .weather-panel { padding: 0.8rem; }
+  .weather-mode-switch button { font-size: 0.68rem; }
+  .preset-grid > button { min-height: 8.5rem; }
+  .dashboard-flow { gap: 0.3rem; }
+  .dashboard-flow > div:nth-child(n+4) { padding-inline: 0.15rem; }
+  .dashboard-flow > div:nth-child(n+4) > span:nth-last-child(1) { display: none; }
 }

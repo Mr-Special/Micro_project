@@ -4,7 +4,6 @@ import {
   RotateCcw,
   Sparkles,
   Sliders,
-  Download,
   Check,
   ChevronRight,
   Wind
@@ -109,26 +108,6 @@ export default function App() {
     showToast('Applied weather-optimized parameters');
   };
 
-  const handleExportConfig = () => {
-    const exportData = {
-      timestamp: new Date().toISOString(),
-      weather: weatherContext,
-      parameters,
-      prediction: prediction?.targets,
-      environmental_impact: prediction?.environmental_impact,
-      composite_score: prediction?.composite_score,
-      engine: isBackendOnline ? 'Render FastAPI Backend' : 'Local Physics Surrogate'
-    };
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `microoptix-weather-run-${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast('Exported run configuration JSON');
-  };
-
   return (
     <div className="dashboard-canvas min-h-screen flex flex-col text-[#1F1E1D] dark:text-[#EDE8E1] transition-colors duration-200">
       
@@ -157,13 +136,13 @@ export default function App() {
       </AnimatePresence>
 
       {/* Main Content Dashboard */}
-      <main className="mx-auto w-full max-w-none flex-1 space-y-8 px-4 py-6 sm:px-7 lg:space-y-10 lg:px-10 lg:py-8 2xl:px-14">
+      <main className="dashboard-main mx-auto w-full max-w-[1600px] flex-1 space-y-9 px-4 py-6 sm:px-7 lg:space-y-12 lg:px-10 lg:py-10 2xl:px-14">
         
         {/* Mission Banner (Claude Minimalist Aesthetic) */}
-        <section className="dashboard-intro relative isolate overflow-hidden rounded-[1.5rem] border border-[#E8E2D8] dark:border-[#39362F]">
+        <section className="dashboard-intro relative isolate overflow-hidden rounded-[1.75rem] border border-[#E8E2D8] shadow-[0_16px_60px_-40px_rgba(83,49,32,0.35)] dark:border-[#39362F] dark:shadow-black/20">
           <div className="dashboard-intro-orbit pointer-events-none absolute -right-10 -top-32 h-[30rem] w-[30rem] rounded-full border border-[#CC5A2B]/15" />
           <div className="dashboard-intro-orbit pointer-events-none absolute -right-2 -top-24 h-[24rem] w-[24rem] rounded-full border border-[#CC5A2B]/20" />
-          <div className="relative z-10 grid gap-7 p-6 sm:p-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:px-10 lg:py-10 xl:px-12 xl:py-12">
+          <div className="relative z-10 grid gap-7 p-6 sm:p-9 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:px-12 lg:py-12 xl:px-14 xl:py-14">
             <div className="max-w-4xl">
               <p className="mb-4 flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.2em] text-[#CC5A2B]">
                 <span className="h-px w-7 bg-[#CC5A2B]" /> Process studio <span className="text-[#78716C] dark:text-[#A8A29E]">/ Workbench 01</span>
@@ -175,9 +154,6 @@ export default function App() {
                 Local weather and machine settings, brought into one clear view. Tune the inputs and see the predicted result respond.
               </p>
               <div className="mt-7 flex flex-wrap items-center gap-2.5">
-                <button disabled={!weatherContext} onClick={handleExportConfig} className="secondary-button disabled:cursor-not-allowed disabled:opacity-50">
-                  <Download className="h-3.5 w-3.5 text-[#78716C]" /><span>Export run</span>
-                </button>
                 <button onClick={() => setIsOptimizeOpen(true)} className="primary-button">
                   <Sparkles className="h-3.5 w-3.5" /><span>Launch optimizer</span>
                 </button>
@@ -208,11 +184,13 @@ export default function App() {
         </section>
 
         {/* WEATHER & ANOMALY PANEL (Open-Meteo Live API) */}
-        <section className="space-y-3">
-          <div className="flex items-center gap-3 px-1">
-            <span className="font-mono text-[10px] tracking-widest text-[#CC5A2B]">01</span>
-            <span className="h-px w-6 bg-[#CC5A2B]/50" />
-            <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-[#78716C] dark:text-[#A8A29E]">Location & atmosphere</span>
+        <section className="dashboard-section space-y-4">
+          <div className="flex flex-wrap items-end justify-between gap-3 px-1">
+            <div>
+              <p className="mb-1 flex items-center gap-3 text-[10px] font-mono tracking-[0.18em] text-[#CC5A2B]"><span>01</span><span className="h-px w-7 bg-[#CC5A2B]/50" /> LIVE CONTEXT</p>
+              <h2 className="font-serif text-2xl tracking-tight sm:text-3xl">Location & atmosphere</h2>
+            </div>
+            <p className="max-w-md text-xs leading-5 text-[#78716C] dark:text-[#A8A29E]">Set the local conditions that inform every process prediction.</p>
           </div>
           <WeatherPanel
             weatherContext={weatherContext}
@@ -221,11 +199,13 @@ export default function App() {
         </section>
 
         {/* Industry Presets */}
-        <section className="space-y-3">
-          <div className="flex items-center gap-3 px-1">
-            <span className="font-mono text-[10px] tracking-widest text-[#CC5A2B]">02</span>
-            <span className="h-px w-6 bg-[#CC5A2B]/50" />
-            <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-[#78716C] dark:text-[#A8A29E]">Starting points</span>
+        <section className="dashboard-section space-y-4">
+          <div className="flex flex-wrap items-end justify-between gap-3 px-1">
+            <div>
+              <p className="mb-1 flex items-center gap-3 text-[10px] font-mono tracking-[0.18em] text-[#CC5A2B]"><span>02</span><span className="h-px w-7 bg-[#CC5A2B]/50" /> PROCESS LIBRARY</p>
+              <h2 className="font-serif text-2xl tracking-tight sm:text-3xl">Starting points</h2>
+            </div>
+            <p className="max-w-md text-xs leading-5 text-[#78716C] dark:text-[#A8A29E]">Choose a proven setup, then refine it for today’s conditions.</p>
           </div>
           <PresetScenarios
             onSelectPreset={handleSelectPreset}
@@ -234,10 +214,15 @@ export default function App() {
         </section>
 
         {/* Split Grid: Left = Sliders / Inputs, Right = Predictions & Analytics */}
+        <section className="dashboard-section space-y-4">
+        <div className="flex flex-wrap items-end justify-between gap-3 px-1">
+          <div><p className="mb-1 flex items-center gap-3 text-[10px] font-mono tracking-[0.18em] text-[#CC5A2B]"><span>03</span><span className="h-px w-7 bg-[#CC5A2B]/50" /> MODEL WORKBENCH</p><h2 className="font-serif text-2xl tracking-tight sm:text-3xl">Tune & evaluate</h2></div>
+          <p className="max-w-md text-xs leading-5 text-[#78716C] dark:text-[#A8A29E]">Adjust machine inputs and compare their predicted outcomes.</p>
+        </div>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 xl:gap-8 2xl:gap-10">
           
           {/* Left Column: Parameter Controls (5 cols) */}
-          <div className="lg:col-span-5 space-y-4">
+          <div className="dashboard-section-card lg:col-span-5 space-y-4">
             
             <div className="flex items-center justify-between pb-1">
               <div className="flex items-center gap-2">
@@ -315,6 +300,7 @@ export default function App() {
           </div>
 
         </div>
+        </section>
 
       </main>
 
