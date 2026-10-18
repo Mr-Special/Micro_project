@@ -17,6 +17,25 @@ The system consists of a React frontend and a FastAPI backend. When the backend 
 - Optimization for balanced performance, higher MRR, lower roughness, target roughness, and weather resilience.
 - Light and dark themes with responsive layouts.
 
+## Weather data integration
+
+The frontend uses the [Open-Meteo Geocoding API](https://open-meteo.com/en/docs/geocoding-api) to search Indian cities and obtain their coordinates. City searches include the selected state and filter results to India. It then requests current conditions from the [Open-Meteo Forecast API](https://open-meteo.com/en/docs) using the coordinates and the `timezone=auto` option. No API key is required for this project's non-commercial use.
+
+The current-conditions request includes:
+
+| Field | Use in the application |
+| --- | --- |
+| `temperature_2m` | Ambient temperature |
+| `apparent_temperature` | Displayed apparent temperature |
+| `relative_humidity_2m` | Humidity context and process impact |
+| `surface_pressure` | Pressure context and process impact |
+| `wind_speed_10m` | Wind context |
+| `weather_code` | Human-readable condition and icon, mapped from WMO codes |
+
+The weather context passed to the process model uses temperature, humidity, and pressure, plus optional user-selected deltas. Wind speed and the weather condition are shown as context. The anomaly presets and custom atmospheric adjustments are simulations performed in the app; they do not modify or request synthetic weather from Open-Meteo. If a live request fails, the weather service returns a clearly marked sample condition set instead.
+
+**Unit note:** Open-Meteo's forecast endpoint defaults wind speed to km/h. The current frontend labels wind speed as m/s without specifying `wind_speed_unit=ms` in the request. The displayed wind value may therefore be mislabeled until that is corrected.
+
 ## Technology stack
 
 | Component | Technologies |
