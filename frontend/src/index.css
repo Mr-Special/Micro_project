@@ -1,0 +1,254 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { scroll-behavior: smooth; }
+  body {
+    background-color: #FAF8F5;
+    color: #1F1E1D;
+    font-family: "Plus Jakarta Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    font-size: 15px;
+    line-height: 1.55;
+  }
+  .dark body {
+    background-color: #181715;
+    color: #EDE8E1;
+  }
+  * {
+    border-color: #E8E2D8;
+  }
+  .dark * {
+    border-color: #34312B;
+  }
+  button, input, select { font: inherit; }
+  button { -webkit-tap-highlight-color: transparent; }
+  :focus-visible { outline: 2px solid #CC5A2B; outline-offset: 2px; }
+}
+
+/* Claude Minimalist Card & Panel Styling */
+.claude-card {
+  background: #FFFFFF;
+  border: 1px solid #E8E2D8;
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px rgba(31, 30, 29, 0.035);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.dark .claude-card {
+  background: linear-gradient(145deg, #24221F 0%, #211F1C 100%);
+  border: 1px solid #39362F;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.dashboard-intro {
+  background:
+    radial-gradient(ellipse at 86% 12%, rgba(204, 90, 43, 0.1), transparent 36%),
+    linear-gradient(120deg, #FFFFFF 0%, #F5F0EA 100%);
+}
+
+.dashboard-canvas {
+  background:
+    radial-gradient(ellipse at 94% 4%, rgba(204, 90, 43, 0.045), transparent 28%),
+    #FAF8F5;
+}
+
+.dark .dashboard-canvas {
+  background:
+    radial-gradient(ellipse at 94% 4%, rgba(204, 90, 43, 0.075), transparent 28%),
+    #181715;
+}
+
+.dark .dashboard-intro {
+  background:
+    radial-gradient(ellipse at 84% 12%, rgba(204, 90, 43, 0.16), transparent 38%),
+    linear-gradient(120deg, #25221F 0%, #1F1D1A 100%);
+}
+
+.studio-art {
+  background-image:
+    radial-gradient(ellipse at 50% 50%, rgba(204, 90, 43, 0.08), transparent 53%),
+    linear-gradient(rgba(120, 113, 108, 0.065) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(120, 113, 108, 0.065) 1px, transparent 1px);
+  background-size: auto, 34px 34px, 34px 34px;
+}
+
+.dark .studio-art {
+  background-image:
+    radial-gradient(ellipse at 50% 50%, rgba(204, 90, 43, 0.11), transparent 55%),
+    linear-gradient(rgba(237, 232, 225, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(237, 232, 225, 0.045) 1px, transparent 1px);
+}
+
+.dashboard-flow {
+  background:
+    radial-gradient(ellipse at 50% 48%, rgba(204, 90, 43, 0.075), transparent 56%),
+    linear-gradient(rgba(120, 113, 108, 0.045) 1px, transparent 1px);
+  background-size: auto, 100% 28px;
+  border-radius: 1.25rem;
+}
+
+.dark .dashboard-flow {
+  background:
+    radial-gradient(ellipse at 50% 48%, rgba(204, 90, 43, 0.13), transparent 58%),
+    linear-gradient(rgba(237, 232, 225, 0.035) 1px, transparent 1px);
+  background-size: auto, 100% 28px;
+}
+
+.target-index {
+  display: block;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.target-label {
+  font-family: "Newsreader", Georgia, serif;
+  font-size: 1.2rem;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+
+.target-value {
+  font-family: "Space Grotesk", "Plus Jakarta Sans", sans-serif;
+  font-size: clamp(2.9rem, 3.4vw, 3.75rem);
+  font-variant-numeric: lining-nums tabular-nums;
+  font-weight: 600;
+  letter-spacing: -0.09em;
+  line-height: 0.88;
+}
+
+.target-unit {
+  font-family: "Space Grotesk", "Plus Jakarta Sans", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  white-space: nowrap;
+}
+
+.target-value-display {
+  font-family: "Space Grotesk", "Plus Jakarta Sans", sans-serif;
+  font-variant-numeric: lining-nums tabular-nums;
+  font-weight: 600;
+  letter-spacing: -0.09em;
+}
+
+.primary-button, .secondary-button {
+  min-height: 2.5rem;
+  padding: 0.625rem 0.875rem;
+  border-radius: 0.625rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  transition: background-color 150ms ease, border-color 150ms ease, transform 150ms ease;
+}
+.primary-button { color: #fff; background: #CC5A2B; }
+.primary-button:hover { background: #B84A20; }
+.secondary-button { color: #1F1E1D; background: #fff; border: 1px solid #E8E2D8; }
+.secondary-button:hover { background: #F4EFEA; }
+.dark .secondary-button { color: #EDE8E1; background: #22201D; border-color: #34312B; }
+.dark .secondary-button:hover { background: #292723; }
+
+.claude-pill {
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.25rem 0.75rem;
+  transition: all 0.15s ease;
+}
+
+/* Minimalist Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(120, 113, 108, 0.25);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(120, 113, 108, 0.45);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(168, 162, 158, 0.2);
+}
+
+/* Claude Minimalist Range Slider */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"]:focus {
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #CC5A2B;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s ease, background 0.15s ease;
+  margin-top: -5px;
+}
+
+.dark input[type="range"]::-webkit-slider-thumb {
+  background: #E07A5F;
+  border: 2px solid #22201D;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+input[type="range"]:active::-webkit-slider-thumb {
+  transform: scale(1.25);
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 5px;
+  border-radius: 9999px;
+  background: #E8E2D8;
+}
+
+.dark input[type="range"]::-webkit-slider-runnable-track {
+  background: #34312B;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #CC5A2B;
+  border: 2px solid #FFFFFF;
+}
+
+.dark input[type="range"]::-moz-range-thumb {
+  background: #E07A5F;
+  border: 2px solid #22201D;
+}
