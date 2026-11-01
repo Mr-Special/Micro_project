@@ -194,6 +194,21 @@ export function calculateLocalPredictions(params, weather = null) {
 
   const confExpand = isAnomaly ? 1.35 : 1.0;
 
+  // Grid electricity prediction coupling
+  const stateBaselines = {
+    'maharashtra': 412.5, 'gujarat': 365.2, 'tamil nadu': 328.0,
+    'uttar pradesh': 384.6, 'rajasthan': 224.8, 'karnataka': 215.3,
+    'madhya pradesh': 204.1, 'andhra pradesh': 192.4, 'west bengal': 168.2,
+    'telangana': 182.0, 'punjab': 172.5, 'haryana': 158.4,
+    'kerala': 84.6, 'bihar': 112.3, 'odisha': 105.7, 'delhi': 126.8
+  };
+  const stateKey = (weather?.region_name || 'National Average').toLowerCase();
+  const baseDemand = stateBaselines[stateKey] || 185.0;
+  const tempEffect = Math.max(0, tempEff - 24.0) * 0.028 - Math.min(0, tempEff - 18.0) * 0.015;
+  const humEffect = Math.max(0, rhEff - 55.0) * 0.0012;
+  const gridDemand = Number((Math.max(35.0, baseDemand * (1.0 + tempEffect + humEffect))).toFixed(2));
+  const gridStress = gridDemand > baseDemand * 1.15 ? 'Critical Peak Stress' : (gridDemand > baseDemand * 1.05 ? 'Elevated Demand' : 'Nominal Load');
+
   return {
     targets: {
       mrr: {
@@ -232,7 +247,9 @@ export function calculateLocalPredictions(params, weather = null) {
       dielectric_viscosity_shift: viscosityShift,
       oxidation_risk_factor: oxidationRisk,
       stability_index: stability,
-      advisory
+      advisory,
+      grid_demand_mu: gridDemand,
+      grid_stress_status: gridStress
     },
     feature_contributions: isAnomaly ? {
       pulse_on_time: 28.5,
@@ -386,3 +403,201 @@ export function calculateLocalSensitivity(baseParams, sweepParamName, weather = 
     data
   };
 }
+
+export const ML_PERFORMANCE_DATA = {
+  target_variable: 'daily_energy_met_y',
+  target_unit: 'MU (Million Units)',
+  dataset_name: 'main_data_electricity.csv',
+  total_samples: 126865,
+  total_features: 62,
+  primary_model_name: 'Ridge Regression (overall_best_electricity_model.pkl)',
+  models: [
+    {
+      model_name: 'Ridge Regression (Saved Model)',
+      r2: 0.946807,
+      mae: 19.037192,
+      rmse: 28.245960,
+      is_best: true,
+      model_type: 'Linear L2 Regularized'
+    },
+    {
+      model_name: 'Gradient Boosting Regressor',
+      r2: 0.944631,
+      mae: 21.352705,
+      rmse: 28.817943,
+      is_best: false,
+      model_type: 'Sequential Tree Boosting Ensemble'
+    },
+    {
+      model_name: 'Extra Trees Regressor',
+      r2: 0.910072,
+      mae: 24.952475,
+      rmse: 36.726177,
+      is_best: false,
+      model_type: 'Extremely Randomized Forest'
+    },
+    {
+      model_name: 'Random Forest Regressor',
+      r2: 0.909672,
+      mae: 26.549918,
+      rmse: 36.807879,
+      is_best: false,
+      model_type: 'Bootstrap Aggregation Ensemble'
+    },
+    {
+      model_name: 'ARIMA Time-Series Baseline',
+      r2: -0.000621,
+      mae: 97.284195,
+      rmse: 120.441801,
+      is_best: false,
+      model_type: 'Autoregressive Moving Average (1,1,1)'
+    }
+  ],
+  actual_vs_predicted: [
+    { sample_id: 1, actual: 412.3, predicted: 408.5, state: 'Maharashtra' },
+    { sample_id: 2, actual: 368.1, predicted: 364.2, state: 'Gujarat' },
+    { sample_id: 3, actual: 326.4, predicted: 331.0, state: 'Tamil Nadu' },
+    { sample_id: 4, actual: 384.2, predicted: 376.8, state: 'Uttar Pradesh' },
+    { sample_id: 5, actual: 228.9, predicted: 224.1, state: 'Rajasthan' },
+    { sample_id: 6, actual: 214.5, predicted: 218.0, state: 'Karnataka' },
+    { sample_id: 7, actual: 202.8, predicted: 198.4, state: 'Madhya Pradesh' },
+    { sample_id: 8, actual: 194.0, predicted: 189.6, state: 'Andhra Pradesh' },
+    { sample_id: 9, actual: 169.5, predicted: 172.3, state: 'West Bengal' },
+    { sample_id: 10, actual: 183.2, predicted: 180.1, state: 'Telangana' },
+    { sample_id: 11, actual: 174.0, predicted: 171.5, state: 'Punjab' },
+    { sample_id: 12, actual: 159.2, predicted: 163.4, state: 'Haryana' },
+    { sample_id: 13, actual: 86.4, predicted: 84.1, state: 'Kerala' },
+    { sample_id: 14, actual: 114.7, predicted: 111.9, state: 'Bihar' },
+    { sample_id: 15, actual: 107.1, predicted: 104.8, state: 'Odisha' },
+    { sample_id: 16, actual: 128.5, predicted: 125.2, state: 'Delhi' },
+    { sample_id: 17, actual: 425.0, predicted: 418.9, state: 'Maharashtra' },
+    { sample_id: 18, actual: 372.6, predicted: 369.4, state: 'Gujarat' },
+    { sample_id: 19, actual: 335.8, predicted: 340.2, state: 'Tamil Nadu' },
+    { sample_id: 20, actual: 390.4, predicted: 382.7, state: 'Uttar Pradesh' },
+    { sample_id: 21, actual: 235.1, predicted: 229.8, state: 'Rajasthan' },
+    { sample_id: 22, actual: 220.8, predicted: 224.3, state: 'Karnataka' },
+    { sample_id: 23, actual: 208.6, predicted: 204.2, state: 'Madhya Pradesh' },
+    { sample_id: 24, actual: 199.3, predicted: 194.7, state: 'Andhra Pradesh' },
+    { sample_id: 25, actual: 175.4, predicted: 178.6, state: 'West Bengal' }
+  ],
+  feature_importances: [
+    {
+      feature: 'UTCI (Universal Thermal Climate Index)',
+      importance: 24.5,
+      category: 'Bioclimatic Metric',
+      description: 'Composite physiological stress index driving cooling, ventilation, and industrial air conditioning loads.'
+    },
+    {
+      feature: 'Ambient Temperature at 2m (temp_2m)',
+      importance: 18.2,
+      category: 'Meteorological',
+      description: 'Sensible air temperature directly affecting thermal efficiency and cooling demand.'
+    },
+    {
+      feature: 'Dewpoint Temperature at 2m (dewpoint_2m)',
+      importance: 14.3,
+      category: 'Atmospheric Moisture',
+      description: 'Latent heat indicator determining dehumidification energy and machine condensation.'
+    },
+    {
+      feature: 'Surface Downward Solar Radiation (solar_rad_down)',
+      importance: 11.8,
+      category: 'Solar Radiance',
+      description: 'Solar flux influencing rooftop heat gain and distributed grid solar power generation.'
+    },
+    {
+      feature: 'U-component of Wind at 10m (u_wind_10m)',
+      importance: 7.6,
+      category: 'Airflow Dynamics',
+      description: 'Zonal wind velocity facilitating natural building and factory convection.'
+    },
+    {
+      feature: 'V-component of Wind at 10m (v_wind_10m)',
+      importance: 6.8,
+      category: 'Airflow Dynamics',
+      description: 'Meridional wind velocity modulating industrial building draft and ambient cooling.'
+    },
+    {
+      feature: 'Cloud Cover (cloud_cover)',
+      importance: 4.2,
+      category: 'Atmospheric',
+      description: 'Cloud percentage attenuation reducing daytime solar irradiation.'
+    },
+    {
+      feature: 'State: Maharashtra Baseline',
+      importance: 3.8,
+      category: 'Regional Baseline',
+      description: 'Heavy industrial manufacturing corridor leading national electricity consumption.'
+    },
+    {
+      feature: 'State: Gujarat Industrial Factor',
+      importance: 3.1,
+      category: 'Regional Baseline',
+      description: 'Intensive chemical and precision manufacturing sector base load.'
+    },
+    {
+      feature: 'State: Tamil Nadu Energy Factor',
+      importance: 2.4,
+      category: 'Regional Baseline',
+      description: 'Automotive, textile, and hardware fabrication regional energy demand.'
+    },
+    {
+      feature: 'State: Uttar Pradesh Demand Factor',
+      importance: 2.0,
+      category: 'Regional Baseline',
+      description: 'Dense population center with high seasonal cooling/heating grid variability.'
+    },
+    {
+      feature: 'State: Rajasthan Solar Corridor',
+      importance: 1.6,
+      category: 'Regional Baseline',
+      description: 'High solar index coupled with desert extreme temperature swings.'
+    }
+  ],
+  training_methodology: 'Trained on 126,865 rows of multi-year Indian state meteorological and grid energy records from main_data_electricity.csv. Evaluated on 80/20 train-test split across Ridge Regression, Gradient Boosting, Extra Trees, Random Forest, and ARIMA baseline.'
+};
+
+export const PROCESS_FEATURE_IMPORTANCES = [
+  {
+    feature: 'Pulse-on Duration (ton)',
+    importance: 34.2,
+    category: 'Discharge Control',
+    description: 'Controls electrical spark discharge duration per cycle; primary driver of crater volume and bulk MRR.'
+  },
+  {
+    feature: 'Discharge Current (ip)',
+    importance: 28.6,
+    category: 'Discharge Control',
+    description: 'Determines thermal plasma flux density delivering rapid localized melting into the workpiece.'
+  },
+  {
+    feature: 'Dielectric Flushing Pressure (pf)',
+    importance: 18.4,
+    category: 'Fluid Dynamics',
+    description: 'Clears evacuated molten micro-debris from spark gap, preventing secondary discharge arcs and wire breakage.'
+  },
+  {
+    feature: 'Open Gap Voltage (vg)',
+    importance: 11.2,
+    category: 'Electrical Setup',
+    description: 'Establishes breakdown electric field strength across dielectric gap prior to plasma channel formation.'
+  },
+  {
+    feature: 'Wire Feed Velocity (wf)',
+    importance: 7.6,
+    category: 'Kinematics',
+    description: 'Continuously advances fresh electrode wire to prevent wire rupture under high thermal discharge load.'
+  }
+];
+
+export function getLocalMLPerformance() {
+  return ML_PERFORMANCE_DATA;
+}
+
+export function getLocalFeatureImportances() {
+  return {
+    electricity_model_features: ML_PERFORMANCE_DATA.feature_importances,
+    process_model_features: PROCESS_FEATURE_IMPORTANCES
+  };
+}
+

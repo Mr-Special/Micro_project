@@ -11,9 +11,17 @@ from app.schemas import (
     SensitivityRequest,
     SensitivityResponse,
     SensitivityPoint,
-    ModelMetadataResponse
+    ModelMetadataResponse,
+    MLPerformanceResponse,
+    FeatureImportanceResponse
 )
-from app.model import surrogate_model, PARAMETER_SPECS, PARAM_DICT
+from app.model import (
+    surrogate_model,
+    PARAMETER_SPECS,
+    PARAM_DICT,
+    get_ml_performance,
+    get_feature_importances
+)
 from app.optimizer import optimize_parameters
 
 app = FastAPI(
@@ -93,16 +101,35 @@ def root():
     return {
         "service": "MicroOptix AI Backend (Weather-Coupled)",
         "status": "online",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "environment": "Render Production Ready",
         "documentation": "/docs",
-        "endpoints": ["/health", "/api/info", "/api/predict", "/api/optimize", "/api/sensitivity", "/api/presets"]
+        "endpoints": [
+            "/health",
+            "/api/info",
+            "/api/predict",
+            "/api/optimize",
+            "/api/sensitivity",
+            "/api/presets",
+            "/api/ml-performance",
+            "/api/feature-importance"
+        ]
     }
 
 @app.get("/health")
 def health_check():
     """Render health check endpoint"""
     return {"status": "healthy", "service": "microoptix-backend", "ready": True}
+
+@app.get("/api/ml-performance", response_model=MLPerformanceResponse)
+def get_performance():
+    """Returns genuine ML performance metrics, R², MAE, RMSE and actual-vs-predicted calibration data"""
+    return get_ml_performance()
+
+@app.get("/api/feature-importance", response_model=FeatureImportanceResponse)
+def get_importance():
+    """Returns Explainable AI (XAI) feature importances for grid electricity & micro-process models"""
+    return get_feature_importances()
 
 @app.get("/api/info", response_model=ModelMetadataResponse)
 def get_metadata():

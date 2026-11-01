@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   RotateCcw,
   Sparkles,
   Sliders,
-  Check
+  Check,
+  BarChart2,
+  History
 } from 'lucide-react';
 import Header from './components/Header';
 import WeatherPanel from './components/WeatherPanel';
@@ -13,72 +15,42 @@ import PredictionDisplay from './components/PredictionDisplay';
 import OptimizationModal from './components/OptimizationModal';
 import SensitivityChart from './components/SensitivityChart';
 import PresetScenarios from './components/PresetScenarios';
+import MLPerformanceDashboard from './components/MLPerformanceDashboard';
+import PredictionHistory from './components/PredictionHistory';
 import LandingPage from './components/LandingPage';
 import { PARAM_CONFIGS, DEFAULT_PARAMETERS } from './services/surrogate';
-import { fetchPrediction, pingBackend } from './services/api';
+import useBackendHealth from './hooks/useBackendHealth';
+import usePrediction from './hooks/usePrediction';
+import useToast from './hooks/useToast';
+
+const STORAGE_KEY_HISTORY = 'microoptix_prediction_history';
 
 export default function App() {
   const [page, setPage] = useState('home');
+  const [dashboardTab, setDashboardTab] = useState('workbench'); // 'workbench' | 'ml-performance' | 'history'
   const [parameters, setParameters] = useState(DEFAULT_PARAMETERS);
   const [weatherContext, setWeatherContext] = useState(null);
-  const [prediction, setPrediction] = useState(null);
-  const [isCalculating, setIsCalculating] = useState(false);
   const [isOptimizeOpen, setIsOptimizeOpen] = useState(false);
-  const [isBackendOnline, setIsBackendOnline] = useState(false);
-  const [latency, setLatency] = useState(null);
-  const [toastMessage, setToastMessage] = useState(null);
+  const { isBackendOnline, latency } = useBackendHealth();
+  const { prediction, isCalculating } = usePrediction(parameters, weatherContext);
+  const { message: toastMessage, showToast } = useToast();
 
-  // Ping backend on initial load and periodically
-  useEffect(() => {
-    let isMounted = true;
-    async function checkHealth() {
-      const res = await pingBackend();
-      if (isMounted) {
-        setIsBackendOnline(res.online);
-        setLatency(res.latency);
-      }
+  const [historyItems, setHistoryItems] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_HISTORY);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
     }
-    checkHealth();
-    const interval = setInterval(checkHealth, 25000);
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
-  }, []);
+  });
 
-  // Update prediction when parameters OR weatherContext change
   useEffect(() => {
-    if (!weatherContext) {
-      setPrediction(null);
-      setIsCalculating(false);
-      return undefined;
+    try {
+      localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(historyItems));
+    } catch {
+      // Ignore storage quota edge cases
     }
-    let isCurrent = true;
-    setIsCalculating(true);
-
-    const timer = setTimeout(async () => {
-      try {
-        const res = await fetchPrediction(parameters, weatherContext);
-        if (isCurrent && res.data) {
-          setPrediction(res.data);
-        }
-      } catch (err) {
-        console.error('Prediction fetch error:', err);
-      } finally {
-        if (isCurrent) setIsCalculating(false);
-      }
-    }, 40);
-
-    return () => {
-      isCurrent = false;
-      clearTimeout(timer);
-    };
-  }, [parameters, weatherContext]);
-
-  const showToast = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3500);
-  };
+  }, [historyItems]);
 
   const handleParameterChange = useCallback((name, value) => {
     setParameters(prev => ({
@@ -125,6 +97,8 @@ export default function App() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
             className="fixed top-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1F1E1D] text-white text-xs font-medium shadow-xl border border-white/10"
+            role="status"
+            aria-live="polite"
           >
             <Check className="w-3.5 h-3.5 text-[#CC5A2B]" />
             <span>{toastMessage}</span>

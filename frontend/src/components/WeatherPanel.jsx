@@ -308,7 +308,7 @@ export default function WeatherPanel({ weatherContext, onWeatherChange }) {
             <div className="min-w-0 rounded-xl border border-[#E8E2D8] bg-[#FAF8F5] p-3.5 dark:border-[#34312B] dark:bg-[#181715]">
               <div className="mb-1 flex items-center justify-between text-xs text-[#78716C]"><span>Wind / Airflow</span><Wind className="h-4 w-4 text-teal-500" /></div>
               <div className="flex items-baseline gap-1"><span className="font-serif text-xl font-bold text-[#1F1E1D] dark:text-[#EDE8E1]">{effectiveWind}</span><span className="font-mono text-xs text-[#78716C]">m/s</span></div>
-              <div className="mt-0.5 truncate text-[11px] text-[#78716C]">Convective cooling</div>
+              <div className="mt-0.5 truncate text-[11px] text-[#78716C]" title={`${effectiveWind} m/s ≈ ${(effectiveWind * 3.6).toFixed(1)} km/h`}>Convective airflow (~{(effectiveWind * 3.6).toFixed(0)} km/h)</div>
             </div>
             <div className="min-w-0 rounded-xl border border-[#E8E2D8] bg-[#FAF8F5] p-3.5 dark:border-[#34312B] dark:bg-[#181715]">
               <div className="mb-1 flex items-center justify-between text-xs text-[#78716C]"><span>Precipitation</span><CloudRain className="h-4 w-4 text-sky-500" /></div>

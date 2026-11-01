@@ -1,42 +1,106 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sun, Moon, Server, MapPin, ShieldAlert, House } from 'lucide-react';
+import { Sun, Moon, Server, MapPin, ShieldAlert, House, Sliders, BarChart2, History } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import BackendSettingsModal from './BackendSettingsModal';
 
-export default function Header({ isBackendOnline, latency, weatherContext, onHome }) {
+export default function Header({
+  isBackendOnline,
+  latency,
+  weatherContext,
+  onHome,
+  activeTab = 'workbench',
+  onChangeTab,
+  historyCount = 0
+}) {
   const { theme, toggleTheme } = useTheme();
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
     <>
       <header className="dashboard-header sticky top-0 z-30 w-full border-b border-[#E8E2D8] dark:border-[#34312B] bg-[#FAF8F5]/90 dark:bg-[#181715]/90 backdrop-blur-md transition-colors duration-200">
-        <div className="dashboard-header-inner mx-auto flex w-full max-w-none items-center justify-between px-4 py-3.5 sm:px-7 lg:px-10 2xl:px-14">
+        <div className="dashboard-header-inner mx-auto flex w-full max-w-none items-center justify-between px-4 py-3 sm:px-7 lg:px-10 2xl:px-14">
           
           {/* Brand Logo & Name (Claude Minimalist styling) */}
           <div className="flex items-center gap-3">
             <motion.div
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="w-9 h-9 rounded-lg bg-[#CC5A2B] text-white flex items-center justify-center font-semibold text-lg shadow-sm"
+              onClick={onHome}
+              className="w-9 h-9 rounded-lg bg-[#CC5A2B] text-white flex items-center justify-center font-semibold text-lg shadow-sm cursor-pointer"
             >
               µ
             </motion.div>
 
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-serif text-xl font-bold tracking-tight text-[#1F1E1D] dark:text-[#EDE8E1]">
+                <span
+                  onClick={onHome}
+                  className="font-serif text-xl font-bold tracking-tight text-[#1F1E1D] dark:text-[#EDE8E1] cursor-pointer hover:text-[#CC5A2B] transition-colors"
+                >
                   MicroOptix
                 </span>
                 <span className="dashboard-brand-tag hidden px-2 py-0.5 text-[10px] font-mono uppercase tracking-widest rounded-md bg-[#FAF8F5] dark:bg-[#292723] text-[#78716C] dark:text-[#A8A29E] border border-[#E8E2D8] dark:border-[#34312B] xs:inline">
-                  Studio
+                  AI
                 </span>
               </div>
               <p className="text-[11px] text-[#78716C] dark:text-[#A8A29E] font-medium hidden sm:block">
-                Process prediction and optimization
+                Precision Process AI & Weather Dynamics
               </p>
             </div>
           </div>
+
+          {/* Center Navigation Switcher Tabs */}
+          {onChangeTab && (
+            <div className="hidden lg:flex items-center p-1 rounded-xl bg-[#F0ECE6] dark:bg-[#22201D] border border-[#E8E2D8] dark:border-[#34312B]">
+              <button
+                type="button"
+                onClick={() => onChangeTab('workbench')}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  activeTab === 'workbench'
+                    ? 'bg-white dark:bg-[#181715] text-[#1F1E1D] dark:text-[#EDE8E1] shadow-sm font-semibold'
+                    : 'text-[#78716C] dark:text-[#A8A29E] hover:text-[#1F1E1D]'
+                }`}
+              >
+                <Sliders className="w-3.5 h-3.5 text-[#CC5A2B]" />
+                <span>Workbench</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onChangeTab('ml-performance')}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  activeTab === 'ml-performance'
+                    ? 'bg-white dark:bg-[#181715] text-[#1F1E1D] dark:text-[#EDE8E1] shadow-sm font-semibold'
+                    : 'text-[#78716C] dark:text-[#A8A29E] hover:text-[#1F1E1D]'
+                }`}
+              >
+                <BarChart2 className="w-3.5 h-3.5 text-[#CC5A2B]" />
+                <span>ML Performance</span>
+                <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[#CC5A2B]/10 text-[#CC5A2B] font-bold">
+                  R² 0.947
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onChangeTab('history')}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  activeTab === 'history'
+                    ? 'bg-white dark:bg-[#181715] text-[#1F1E1D] dark:text-[#EDE8E1] shadow-sm font-semibold'
+                    : 'text-[#78716C] dark:text-[#A8A29E] hover:text-[#1F1E1D]'
+                }`}
+              >
+                <History className="w-3.5 h-3.5 text-[#CC5A2B]" />
+                <span>History</span>
+                {historyCount > 0 && (
+                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-[#CC5A2B] text-white font-bold">
+                    {historyCount}
+                  </span>
+                )}
+              </button>
+            </div>
+          )}
 
           {/* Right Action Controls */}
           <div className="flex items-center gap-2 sm:gap-3">

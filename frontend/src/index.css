@@ -31,50 +31,41 @@
 
 /* Claude Minimalist Card & Panel Styling */
 .claude-card {
-  background: linear-gradient(145deg, #FFFFFF 0%, #FFFEFC 100%);
+  background: #FFFFFF;
   border: 1px solid #E8E2D8;
   border-radius: 1.125rem;
-  box-shadow: 0 2px 5px rgba(31, 30, 29, 0.025), 0 14px 36px -28px rgba(31, 30, 29, 0.24);
-  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+  box-shadow: 0 1px 2px rgba(31, 30, 29, 0.025);
+  transition: border-color 180ms ease;
 }
 
 .dashboard-main { isolation: isolate; }
 .dashboard-section-card { min-width: 0; }
 .dashboard-section .claude-card:hover { border-color: rgba(204, 90, 43, 0.28); }
-.dashboard-intro { box-shadow: 0 18px 64px -42px rgba(83, 49, 32, 0.32); }
+.dashboard-intro { box-shadow: none; }
 .dashboard-flow { min-height: 13rem; }
 
 .dark .claude-card {
-  background: linear-gradient(145deg, #24221F 0%, #211F1C 100%);
+  background: #24221F;
   border: 1px solid #39362F;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.18), 0 14px 36px -28px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
 }
 
 .dark .dashboard-section .claude-card:hover { border-color: rgba(224, 122, 95, 0.4); }
 
 .dashboard-intro {
-  background:
-    radial-gradient(ellipse at 86% 12%, rgba(204, 90, 43, 0.1), transparent 36%),
-    linear-gradient(120deg, #FFFFFF 0%, #F5F0EA 100%);
+  background: #F5F0EA;
 }
 
 .dashboard-canvas {
-  background:
-    radial-gradient(ellipse at 94% 4%, rgba(204, 90, 43, 0.055), transparent 28%),
-    radial-gradient(ellipse at 5% 46%, rgba(204, 90, 43, 0.025), transparent 27%),
-    #FAF8F5;
+  background: #FAF8F5;
 }
 
 .dark .dashboard-canvas {
-  background:
-    radial-gradient(ellipse at 94% 4%, rgba(204, 90, 43, 0.075), transparent 28%),
-    #181715;
+  background: #181715;
 }
 
 .dark .dashboard-intro {
-  background:
-    radial-gradient(ellipse at 84% 12%, rgba(204, 90, 43, 0.16), transparent 38%),
-    linear-gradient(120deg, #25221F 0%, #1F1D1A 100%);
+  background: #25221F;
 }
 
 .studio-art {

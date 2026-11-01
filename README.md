@@ -29,12 +29,12 @@ The current-conditions request includes:
 | `apparent_temperature` | Displayed apparent temperature |
 | `relative_humidity_2m` | Humidity context and process impact |
 | `surface_pressure` | Pressure context and process impact |
-| `wind_speed_10m` | Wind context |
+| `wind_speed_10m` | Wind context (requested in m/s) |
+| `precipitation` | Current precipitation context |
+| `cloud_cover` | Cloud cover context |
 | `weather_code` | Human-readable condition and icon, mapped from WMO codes |
 
-The weather context passed to the process model uses temperature, humidity, and pressure, plus optional user-selected deltas. Wind speed and the weather condition are shown as context. The anomaly presets and custom atmospheric adjustments are simulations performed in the app; they do not modify or request synthetic weather from Open-Meteo. If a live request fails, the weather service returns a clearly marked sample condition set instead.
-
-**Unit note:** Open-Meteo's forecast endpoint defaults wind speed to km/h. The current frontend labels wind speed as m/s without specifying `wind_speed_unit=ms` in the request. The displayed wind value may therefore be mislabeled until that is corrected.
+Live conditions are the baseline for predictions. Users can switch to an anomaly preset or adjust custom weather deltas; these scenarios are simulations layered over the live reading and do not request synthetic weather from Open-Meteo. Temperature, humidity, and pressure inform the process targets, while wind, precipitation, and cloud cover contribute to environmental stability. If the live request fails, the service returns a clearly marked sample condition set.
 
 ## Technology stack
 

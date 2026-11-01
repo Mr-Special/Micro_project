@@ -3,17 +3,18 @@ import {
   runLocalOptimization,
   calculateLocalSensitivity,
   PARAM_CONFIGS,
-  PRESETS_DATA
+  PRESETS_DATA,
+  getLocalMLPerformance,
+  getLocalFeatureImportances
 } from './surrogate';
+import { getDefaultBackendUrl } from '../config';
 
 const STORAGE_KEY_BACKEND_URL = 'microoptix_backend_url';
 
 export function getStoredBackendUrl() {
   const custom = localStorage.getItem(STORAGE_KEY_BACKEND_URL);
   if (custom) return custom.trim().replace(/\/$/, '');
-  const envUrl = import.meta.env.VITE_API_URL;
-  if (envUrl) return envUrl.trim().replace(/\/$/, '');
-  return 'https://microoptix-ai-backend.onrender.com';
+  return getDefaultBackendUrl();
 }
 
 export function setStoredBackendUrl(url) {
@@ -148,3 +149,40 @@ export async function fetchPresets(backendUrl = getStoredBackendUrl()) {
     return PRESETS_DATA;
   }
 }
+
+export async function fetchMLPerformance(backendUrl = getStoredBackendUrl()) {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+    const res = await fetch(`${backendUrl}/api/ml-performance`, { signal: controller.signal });
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      const data = await res.json();
+      return { data, source: 'remote' };
+    }
+    throw new Error(`API returned ${res.status}`);
+  } catch {
+    return { data: getLocalMLPerformance(), source: 'local' };
+  }
+}
+
+export async function fetchFeatureImportances(backendUrl = getStoredBackendUrl()) {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+    const res = await fetch(`${backendUrl}/api/feature-importance`, { signal: controller.signal });
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      const data = await res.json();
+      return { data, source: 'remote' };
+    }
+    throw new Error(`API returned ${res.status}`);
+  } catch {
+    return { data: getLocalFeatureImportances(), source: 'local' };
+  }
+}
+

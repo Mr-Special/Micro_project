@@ -57,6 +57,8 @@ class EnvironmentalImpact(BaseModel):
     oxidation_risk_factor: float
     stability_index: float
     advisory: str
+    grid_demand_mu: Optional[float] = None
+    grid_stress_status: Optional[str] = None
 
 class PredictionResponse(BaseModel):
     targets: Dict[str, MetricDetail]
@@ -123,3 +125,40 @@ class ModelMetadataResponse(BaseModel):
     description: str
     parameters: List[ParameterSpec]
     target_metrics: List[Dict[str, Any]]
+
+class MLModelMetrics(BaseModel):
+    model_name: str
+    r2: float
+    mae: float
+    rmse: float
+    is_best: bool = False
+    model_type: str
+
+class ActualVsPredictedPoint(BaseModel):
+    sample_id: int
+    actual: float
+    predicted: float
+    state: str
+
+class FeatureImportanceItem(BaseModel):
+    feature: str
+    importance: float
+    category: str
+    description: str
+
+class MLPerformanceResponse(BaseModel):
+    target_variable: str
+    target_unit: str
+    dataset_name: str
+    total_samples: int
+    total_features: int
+    primary_model_name: str
+    models: List[MLModelMetrics]
+    actual_vs_predicted: List[ActualVsPredictedPoint]
+    feature_importances: List[FeatureImportanceItem]
+    training_methodology: str
+
+class FeatureImportanceResponse(BaseModel):
+    electricity_model_features: List[FeatureImportanceItem]
+    process_model_features: List[FeatureImportanceItem]
+

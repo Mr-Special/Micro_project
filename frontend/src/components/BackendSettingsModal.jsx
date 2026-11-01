@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Server, CheckCircle2, AlertTriangle, RefreshCw } from 'lucide-react';
 import { pingBackend, getStoredBackendUrl, setStoredBackendUrl } from '../services/api';
+import { getDefaultBackendUrl } from '../config';
 
 export default function BackendSettingsModal({ isOpen, onClose, onStatusChange }) {
   const [url, setUrl] = useState(getStoredBackendUrl());
@@ -28,7 +29,7 @@ export default function BackendSettingsModal({ isOpen, onClose, onStatusChange }
   };
 
   const handleResetDefault = () => {
-    setUrl('https://microoptix-ai-backend.onrender.com');
+    setUrl(getDefaultBackendUrl());
   };
 
   return (

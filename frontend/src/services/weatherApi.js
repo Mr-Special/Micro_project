@@ -54,11 +54,11 @@ export const CITIES_BY_STATE = {
 };
 
 export const ANOMALY_PRESETS = [
-  { id: 'drought', name: 'Drought', description: 'Hot, dry conditions with reduced humidity and a small pressure drop.', deltas: { temp: 8, humidity: -30, pressure: -8, wind: 3, precipitation: 0, cloud: -35 } },
-  { id: 'flood', name: 'Flood / Extreme rain', description: 'Very humid, stormy conditions. Rainfall itself is represented as a scenario estimate.', deltas: { temp: 2, humidity: 35, pressure: -25, wind: 5, precipitation: 12, cloud: 60 } },
-  { id: 'heatwave', name: 'Heatwave', description: 'Sustained high temperatures with drier air and lower pressure.', deltas: { temp: 12, humidity: -15, pressure: -12, wind: 1, precipitation: 0, cloud: -30 } },
-  { id: 'coldwave', name: 'Cold wave', description: 'A sharp temperature drop with drier air and higher pressure.', deltas: { temp: -12, humidity: -10, pressure: 10, wind: 2, precipitation: 0, cloud: 10 } },
-  { id: 'cyclone', name: 'Cyclone', description: 'Warm, moisture-heavy air with a pronounced pressure drop.', deltas: { temp: 4, humidity: 40, pressure: -45, wind: 18, precipitation: 15, cloud: 70 } }
+  { id: 'drought', name: 'Drought', description: 'Hot, dry conditions with reduced humidity (-30%), pressure drop, and dry convective wind (+3 m/s).', deltas: { temp: 8, humidity: -30, pressure: -8, wind: 3, precipitation: 0, cloud: -35 } },
+  { id: 'flood', name: 'Flood / Extreme rain', description: 'Very humid conditions (+35%), active precipitation estimate (+12 mm), and squall winds (+5 m/s).', deltas: { temp: 2, humidity: 35, pressure: -25, wind: 5, precipitation: 12, cloud: 60 } },
+  { id: 'heatwave', name: 'Heatwave', description: 'Sustained severe temperature rise (+12°C) with dry air (-15%) and barometric pressure drop.', deltas: { temp: 12, humidity: -15, pressure: -12, wind: 1, precipitation: 0, cloud: -30 } },
+  { id: 'coldwave', name: 'Cold wave', description: 'Severe temperature drop (-12°C) with cold high-pressure atmospheric ridge (+10 hPa).', deltas: { temp: -12, humidity: -10, pressure: 10, wind: 2, precipitation: 0, cloud: 10 } },
+  { id: 'cyclone', name: 'Cyclone / Severe Gale', description: 'Severe tropical depression (-45 hPa), high humidity (+40%), and gale-force wind gust (+18 m/s ≈ 65 km/h).', deltas: { temp: 4, humidity: 40, pressure: -45, wind: 18, precipitation: 15, cloud: 70 } }
 ];
 
 export function decodeWmoWeather(code) {

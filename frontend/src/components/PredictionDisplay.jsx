@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Activity, ArrowDownRight, ArrowUpRight, Compass, ShieldCheck } from 'lucide-react';
+import { Activity, ArrowDownRight, ArrowUpRight, Compass, ShieldCheck, BookmarkPlus, Zap } from 'lucide-react';
 import PredictionGauge from './PredictionGauge';
 
 function clamp(value, min, max) {
@@ -49,7 +49,7 @@ function TargetCard({ number, title, target, tone, goal }) {
   );
 }
 
-export default function PredictionDisplay({ predictionData, isCalculating }) {
+export default function PredictionDisplay({ predictionData, isCalculating, onSaveSnapshot }) {
   if (!predictionData || !predictionData.targets) return null;
 
   const { targets, composite_score, environmental_impact, feature_contributions } = predictionData;
@@ -71,9 +71,22 @@ export default function PredictionDisplay({ predictionData, isCalculating }) {
             </div>
           </div>
           <div className="flex items-center gap-3 self-start sm:self-auto">
-            <span className={`h-2 w-2 rounded-full ${isCalculating ? 'animate-pulse bg-amber-500' : 'bg-emerald-500'}`} />
-            <span className="text-xs text-[#78716C] dark:text-[#A8A29E]">{isCalculating ? 'Updating with current inputs' : 'Modelled confidence ranges'}</span>
-            <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            {onSaveSnapshot && (
+              <button
+                type="button"
+                onClick={onSaveSnapshot}
+                className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-[#22201D] border border-[#E8E2D8] dark:border-[#39362F] text-[#1F1E1D] dark:text-[#EDE8E1] hover:text-[#CC5A2B] hover:border-[#CC5A2B]/40 flex items-center gap-1.5 shadow-sm transition-all"
+                title="Save this prediction to history"
+              >
+                <BookmarkPlus className="w-3.5 h-3.5 text-[#CC5A2B]" />
+                <span>Save Snapshot</span>
+              </button>
+            )}
+            <div className="hidden xs:flex items-center gap-2">
+              <span className={`h-2 w-2 rounded-full ${isCalculating ? 'animate-pulse bg-amber-500' : 'bg-emerald-500'}`} />
+              <span className="text-xs text-[#78716C] dark:text-[#A8A29E]">{isCalculating ? 'Updating' : 'Modelled'}</span>
+              <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            </div>
           </div>
         </header>
 
@@ -112,6 +125,12 @@ export default function PredictionDisplay({ predictionData, isCalculating }) {
               <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs">
                 <span className="text-[#78716C] dark:text-[#A8A29E]">Stability <strong className="ml-1 font-mono text-[#CC5A2B]">{environmental_impact.stability_index}%</strong></span>
                 <span className="text-[#78716C] dark:text-[#A8A29E]">Thermal drift <strong className="ml-1 font-mono text-[#1F1E1D] dark:text-[#EDE8E1]">±{environmental_impact.thermal_drift_um} µm</strong></span>
+                {environmental_impact.grid_demand_mu && (
+                  <span className="text-[#78716C] dark:text-[#A8A29E] flex items-center gap-1">
+                    <Zap className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Regional Grid Demand: <strong className="font-mono text-[#1F1E1D] dark:text-[#EDE8E1]">{environmental_impact.grid_demand_mu} MU</strong> ({environmental_impact.grid_stress_status || 'Nominal'})</span>
+                  </span>
+                )}
               </div>
               <p className="mt-1.5 text-xs leading-5 text-[#78716C] dark:text-[#A8A29E]">{environmental_impact.advisory}</p>
             </div>
