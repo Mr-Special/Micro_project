@@ -1,52 +1,31 @@
-# MicroOptix AI - Executive Frontend (Vercel Ready)
+# MicroOptix AI frontend
 
-Modern, classy, and responsive web frontend with executive aesthetics and Framer Motion animations. Built with React, Vite, Tailwind CSS, and Recharts.
+React and Vite web client for the weather-aware electricity dashboard. It provides live consumption estimates, anomaly scenarios, a reverse weather-energy optimizer, local historical readings, and model performance charts.
 
----
+For the trained model, data preparation, evaluation metrics, backend API, and full project setup, see the [project README](../README.md).
 
-## 🚀 Quick Start (Local Development)
+## Run locally
 
-### 1. Install Dependencies
 ```bash
-cd frontend
 npm install
-```
-
-### 2. Run Vite Dev Server
-```bash
 npm run dev
 ```
-Open **http://localhost:5173** in your browser.
 
----
+Vite prints the local URL, typically `http://localhost:5173`.
 
-## 🌐 Deploy to Vercel (1-Click Deployment)
+To connect to a local backend, set the following in `frontend/.env` and restart Vite:
 
-The project includes `vercel.json` pre-configured for single-page routing and caching.
-
-### Option A: Using the Vercel Dashboard (Easiest)
-1. Push your repository to **GitHub** or **GitLab**.
-2. Go to [vercel.com](https://vercel.com) and click **"Add New..." -> "Project"**.
-3. Import your repository.
-4. Set **Root Directory** to `frontend`.
-5. Framework Preset: **Vite** (auto-detected).
-6. Under **Environment Variables**, add:
-   - `VITE_API_URL`: Your deployed Render backend URL (e.g. `https://microoptix-ai-backend.onrender.com`)
-7. Click **"Deploy"**.
-
-### Option B: Using Vercel CLI
-```bash
-cd frontend
-npm install -g vercel
-vercel
+```env
+VITE_API_URL=http://127.0.0.1:8000
 ```
 
----
+You can also configure the backend URL in the app. If an electricity endpoint is unavailable, the client uses a simplified local weather estimate for the affected dashboard feature.
 
-## 🎨 Features & Highlights
-- **Clean Minimalist Executive Aesthetic**: Switchable Dark/Light themes with subtle luxury shadows, frosted glass panels, and typography.
-- **Subtle Interface Motion**: Powered by Framer Motion, with transitions and responsive interaction feedback.
-- **Smart Backend Fallback**: Built-in physics-informed surrogate guarantees zero latency and 100% availability even while Render is waking up.
-- **Dynamic Response Surface Sweeps**: Dual-axis sensitivity curve with current-point indicator.
-- **Multi-Objective Optimization Engine**: Choose between Balanced Pareto, Peak MRR, Ultra-Fine Ra, or Custom Target, running Scipy Differential Evolution.
+## Production build
 
+```bash
+npm run build
+npm run preview
+```
+
+For Vercel, set the project root to `frontend`, select Vite, and configure `VITE_API_URL` as the deployed backend URL. Redeploy after changing the environment variable.

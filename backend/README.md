@@ -1,48 +1,45 @@
-# MicroOptix AI - Backend API (Render Ready)
+# MicroOptix AI backend
 
-High-performance FastAPI prediction and Scipy multi-objective optimization service.
+FastAPI service for weather-aware regional electricity demand estimates, model sensitivity analysis, and reverse weather scenario search.
 
----
+For model training, dataset details, evaluation scores, feature engineering, API examples, and full project setup, see the [project README](../README.md#electricity-model).
 
-## 🚀 Quick Start (Local Development)
+## Run locally
 
-### 1. Setup Virtual Environment
+From this directory:
+
 ```bash
-cd backend
-python -m venv venv
-# Windows:
-.\venv\Scripts\activate
-# macOS/Linux:
-source venv/bin/activate
-```
-
-### 2. Install Dependencies
-```bash
+python -m venv .venv
+# Windows PowerShell: .venv\Scripts\Activate.ps1
+# macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
-```
-
-### 3. Run Development Server
-```bash
 uvicorn app.main:app --reload --port 8000
 ```
-Open **http://127.0.0.1:8000/docs** to test the interactive Swagger UI!
 
----
+The interactive API documentation is available at `http://127.0.0.1:8000/docs`.
 
-## 🌐 Deploy to Render (Step-by-Step)
+## Electricity model files
 
-1. Push this repository to **GitHub** or **GitLab**.
-2. Go to [dashboard.render.com](https://dashboard.render.com) and click **"New +" -> "Web Service"**.
-3. Select your repository.
-4. Configure service settings:
-   - **Name**: `microoptix-ai-backend`
-   - **Root Directory**: `backend`
-   - **Environment**: `Python 3`
-   - **Build Command**: `pip install -r requirements.txt`
-   - **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-   - **Plan**: Free
-5. (Optional) In **Advanced Settings**, set **Health Check Path** to `/health`.
-6. Click **"Deploy Web Service"**.
-7. Once deployed, copy your Render URL (e.g. `https://microoptix-ai-backend.onrender.com`).
-8. Paste this URL into the frontend `.env` or in the frontend UI's **Backend Connection Settings** modal!
+- `../overall_best_electricity_model.pkl`: trained Ridge Regression estimator, serialized with scikit-learn 1.6.1.
+- `app/electricity_feature_medians.json`: training medians used to fill model inputs not available from live weather.
+- `../main_data_electricity.csv`: source training dataset.
+- `../Model_Train.ipynb`: data prep, model comparison, evaluation, and export workflow.
 
+At startup, `GET /health` reports `electricity_model_loaded`. The dashboard's inference path uses:
+
+- `POST /api/electricity-predict`
+- `POST /api/electricity-sensitivity`
+- `POST /api/electricity-optimize`
+- `GET /api/ml-performance`
+
+The first three routes use the saved model when it loads. Demand and scenario outputs are regional estimates based on weather inputs; the reverse search returns hypothetical climate values, not a weather forecast.
+
+## Render deployment
+
+Use this directory as the service root, install with `pip install -r requirements.txt`, and start with:
+
+```bash
+uvicorn app.main:app --host 0.0.0.0 --port $PORT
+```
+
+Set the health check path to `/health`. Keep the model artifact and feature medians JSON in the repository at their documented relative paths. The frontend must point `VITE_API_URL` to the deployed service. Deploy the updated backend before expecting the hosted frontend to use the electricity routes.

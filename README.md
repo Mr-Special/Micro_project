@@ -1,71 +1,91 @@
 # MicroOptix AI
 
-MicroOptix AI is a web application for exploring how machine settings and local atmospheric conditions may affect a precision machining process. The dashboard combines weather lookup, process target estimates, operating presets, sensitivity analysis, and parameter optimization.
+MicroOptix AI is a weather-aware electricity demand analysis application for Indian states. It combines live and daily weather inputs with a trained Ridge regression model to estimate regional daily electricity met (in MU, or Million Units), explore weather-response scenarios, and search hypothetical climate inputs for a target demand.
 
-The project has two parts:
+The application keeps a local JavaScript estimate available if the configured backend or trained model cannot be used. The interface identifies whether the displayed prediction came from the backend model or a fallback.
 
-- **Frontend:** React and Vite application for selecting weather, editing process inputs, and viewing predictions.
-- **Backend:** FastAPI service that calculates predictions and runs optimization and sensitivity requests.
+## Live deployment
 
-When the backend cannot be reached, the frontend uses a JavaScript surrogate to keep predictions available. Local optimization is approximate; see [Model behavior and limitations](#model-behavior-and-limitations).
+- **Web app (Vercel):** [micro-project-ten-coral.vercel.app](https://micro-project-ten-coral.vercel.app/)
+- **Backend API (Render):** [micro-project-ug85.onrender.com](https://micro-project-ug85.onrender.com/)
+- **Interactive API docs:** [micro-project-ug85.onrender.com/docs](https://micro-project-ug85.onrender.com/docs)
 
-## Contents
+## Application sections
 
-- [What the application does](#what-the-application-does)
-- [Weather and anomaly workflow](#weather-and-anomaly-workflow)
-- [Technology](#technology)
-- [Repository layout](#repository-layout)
-- [Run locally](#run-locally)
-- [Configure the backend connection](#configure-the-backend-connection)
-- [API reference](#api-reference)
-- [Example prediction request](#example-prediction-request)
-- [Deployment](#deployment)
-- [Model behavior and limitations](#model-behavior-and-limitations)
+- **Live Consumption Dashboard:** Regional demand estimate, baseline comparison, stress category, uncertainty estimate, and temperature-response chart.
+- **Anomaly Simulator:** Apply weather event presets or custom offsets to the selected weather conditions and review the resulting demand estimate.
+- **Weather-Energy Optimizer:** Search hypothetical temperature and humidity values that best match a target daily demand. The result is a model scenario, not a weather forecast or a controllable weather outcome.
+- **Historical Analysis:** Save model readings to browser storage, review them as a chart and table, and clear the saved list.
+- **Model Performance:** Review model comparison metrics, actual-versus-predicted examples, and the displayed feature attribution summary.
 
-## What the application does
+The frontend uses the existing MicroOptix theme, responsive layout, light/dark modes, and shared weather controls. Location search and weather data use Open-Meteo; an API key is not required by the current client.
 
-The dashboard estimates three process targets from five adjustable machine parameters:
+## Electricity model
 
-| Target | Meaning | Typical direction |
-| --- | --- | --- |
-| Material removal rate (MRR) | Estimated rate of material removal | Higher is generally preferred for throughput |
-| Surface roughness (Ra) | Estimated surface finish roughness | Lower is generally preferred for finish quality |
-| Energy efficiency | Estimated process efficiency | Higher is generally preferred |
+### Target and training data
 
-It also displays environmental indicators such as thermal drift, dielectric viscosity shift, oxidation risk, process stability, and an advisory. Prediction responses include confidence intervals and a composite score to help compare configurations.
+The notebook trains a regression model for `daily_energy_met_y`, the dataset's daily electricity-met target, measured in MU. The source file `main_data_electricity.csv` contains **126,865 rows and 62 columns**. Its records cover **2013 through 2024** and include weather, calendar, and Indian state indicator fields.
 
-The main workflow is:
+The notebook removes the target and four related outcome/leakage columns before fitting:
 
-1. Select an Indian state or union territory and a city.
-2. Load the city's current weather or choose an anomaly scenario based on that reading.
-3. Choose an operating preset or adjust machine parameters.
-4. Review predicted targets, environmental impact, and parameter sensitivity.
-5. Optionally optimize parameters for a selected objective and compare the proposed setup with the current one.
+```text
+daily_energy_met_y
+corr_daily_energy_met_y
+corr_peak_met_y
+peak_met_y
+peak_unmet_y
+```
 
-The interface includes light and dark themes, responsive layouts, a prediction history stored in browser local storage, and backend connection settings.
+That leaves **57 model features**:
 
-## Weather and anomaly workflow
+- Weather aggregates: minimum, mean, and maximum U/V wind components; 2 m temperature; 2 m dew point; downward solar radiation; cloud cover; and UTCI, plus national UTCI.
+- Calendar: year, month, and day.
+- Region: one-hot encoded `State_*` indicator features.
 
-The frontend uses the [Open-Meteo Geocoding API](https://open-meteo.com/en/docs/geocoding-api) to resolve a selected city to coordinates, then requests current conditions from the [Open-Meteo Forecast API](https://open-meteo.com/en/docs). The forecast request uses the location's timezone and requests wind speed in metres per second. No API key is required by the current integration. Review Open-Meteo's terms for your intended use.
+The notebook fills missing feature and target values with their training-data medians. Because the dataset exceeds 30,000 rows, it samples 20,000 rows with `random_state=42`, then uses an 80/20 train/test split with `random_state=42` (16,000 training rows and 4,000 test rows).
 
-The application reads these current fields:
+### Candidate models and selected artifact
 
-| API field | Application use |
-| --- | --- |
-| `temperature_2m` | Ambient temperature used in process calculations |
-| `apparent_temperature` | Additional displayed weather context |
-| `relative_humidity_2m` | Humidity used in process calculations |
-| `surface_pressure` | Pressure used in process calculations |
-| `wind_speed_10m` | Wind context and environmental stability |
-| `precipitation` | Precipitation context and environmental stability |
-| `cloud_cover` | Cloud context and environmental stability |
-| `weather_code` | Human-readable condition and weather icon, mapped from WMO codes |
+The notebook evaluates Random Forest, Gradient Boosting, Ridge Regression, Extra Trees, and an ARIMA(1,1,1) time-series baseline. It selects the candidate with the highest R-squared, excluding ARIMA, and serializes it as `overall_best_electricity_model.pkl`.
 
-Weather refreshes when the selected city changes, can be refreshed manually, and is periodically updated while the city remains selected. The dashboard labels live readings separately from sample data. If a weather request fails, the weather service returns a clearly marked sample reading so that the interface can still be explored.
+The checked-in artifact is a **Ridge regression model with L2 regularization (`alpha=1.0`)**. The performance values returned by the backend are:
 
-**Live weather** uses the fetched conditions as the baseline for a prediction. **Anomaly test** layers one of the available scenarios (drought, flood/extreme rain, heatwave, cold wave, or cyclone) or user-adjusted deltas over that baseline. These are simulated values; the app does not ask Open-Meteo for synthetic anomaly data. Temperature, humidity, and pressure affect the process target calculations. Wind, precipitation, and cloud cover affect environmental stability and related scores.
+| Model | R-squared | MAE (MU) | RMSE (MU) |
+| --- | ---: | ---: | ---: |
+| Ridge Regression (saved model) | 0.946807 | 19.037192 | 28.245960 |
+| Gradient Boosting Regressor | 0.944631 | 21.352705 | 28.817943 |
+| Extra Trees Regressor | 0.910072 | 24.952475 | 36.726177 |
+| Random Forest Regressor | 0.909672 | 26.549918 | 36.807879 |
+| ARIMA(1,1,1) baseline | -0.000621 | 97.284195 | 120.441801 |
 
-## Technology
+The displayed `+/- 19.04 MU` uncertainty is the saved-model MAE used as a simple error indicator. It is not a calibrated per-prediction confidence interval.
+
+### Runtime inference path
+
+1. The frontend reads current and daily weather for the selected location and sends the state, date, and weather context to the backend.
+2. The backend loads `overall_best_electricity_model.pkl` and arranges the inputs in the artifact's original 57-feature order.
+3. `backend/app/electricity_feature_medians.json` supplies training-data medians for features that the live weather request does not provide.
+4. The saved Ridge model predicts daily electricity met. The backend returns the estimate, a state reference baseline, demand stress category, model name, and model-load status.
+5. The temperature response chart and reverse weather optimizer call separate backend endpoints that evaluate the same trained model. If a request fails, the frontend uses a local weather estimate instead.
+
+The input conversion is approximate because the training data contains daily regional aggregates while the app receives current and daily weather for a selected location. Daily temperature, dew point, cloud cover, and solar radiation are populated from Open-Meteo where available; wind components are derived from wind speed and direction; apparent temperature is used as a UTCI proxy; and missing fields use saved training medians. The model's year feature is capped at 2024, the latest year in the training data. Treat outputs as regional estimates, not metered readings or guaranteed forecasts.
+
+The backend reports `electricity_model_loaded` at `GET /health`. The frontend labels a local fallback estimate if the backend endpoint is unavailable. The Python dependency pins scikit-learn to 1.6.1 to match the serialized estimator.
+
+### Training notebook
+
+`Model_Train.ipynb` contains the data preparation, model fitting, metrics, comparison, and export workflow. The notebook was authored for Google Colab and reads `/content/main_data_electricity.csv`; when running it elsewhere, update that path to the local CSV. It uses pandas, NumPy, scikit-learn, statsmodels, matplotlib, and seaborn. The final cell uses Colab's `files.download`; replace that step with a local file copy when running outside Colab.
+
+To reproduce the artifact:
+
+1. Install the notebook dependencies in a separate notebook environment.
+2. Place `main_data_electricity.csv` where the notebook expects it and run the notebook from the start.
+3. Confirm that Ridge Regression is selected in the model comparison.
+4. Export the selected model to `overall_best_electricity_model.pkl` and keep its feature order and training-data medians together with the artifact.
+
+The browser's model performance view receives metrics and a small set of actual-versus-predicted examples from backend metadata. Those summary values and displayed examples are embedded in `backend/app/model.py`; the service does not rerun the training/evaluation notebook at startup.
+
+## Technology and repository layout
 
 | Area | Technologies |
 | --- | --- |
@@ -73,46 +93,37 @@ Weather refreshes when the selected city changes, can be refreshed manually, and
 | Backend | Python, FastAPI, Pydantic, NumPy, SciPy, scikit-learn, Uvicorn |
 | Weather | Open-Meteo Geocoding and Forecast APIs |
 
-## Repository layout
-
 ```text
 Micro_project/
-├── backend/
-│   ├── app/
-│   │   ├── main.py           # FastAPI application and HTTP routes
-│   │   ├── model.py          # Process and environmental calculations
-│   │   ├── optimizer.py      # Backend parameter optimization
-│   │   └── schemas.py        # Request and response validation models
-│   ├── requirements.txt      # Python dependencies
-│   ├── Procfile              # Production server command
-│   └── render.yaml           # Render service configuration
-├── frontend/
-│   ├── src/
-│   │   ├── components/       # Dashboard, weather, charts, and dialogs
-│   │   ├── hooks/            # Prediction, health, and toast hooks
-│   │   ├── services/         # Backend client, weather client, local surrogate
-│   │   └── App.jsx           # Main application flow
-│   ├── .env.example          # Optional backend URL setting
-│   ├── package.json
-│   └── vercel.json           # Vercel SPA routing and asset caching
-├── main_data_electricity.csv
-├── Model_Train.ipynb
-└── overall_best_electricity_model.pkl
+|-- backend/
+|   |-- app/
+|   |   |-- main.py                         # FastAPI routes
+|   |   |-- model.py                        # Saved model loading and inference
+|   |   |-- electricity_feature_medians.json # Training feature medians
+|   |   |-- schemas.py                      # API request/response schemas
+|   |   `-- optimizer.py                    # Legacy process optimizer
+|   |-- requirements.txt
+|   |-- Procfile
+|   `-- render.yaml
+|-- frontend/
+|   |-- src/
+|   |   |-- App.jsx                         # Section navigation and dashboard
+|   |   |-- components/                     # Weather, charts, model metrics
+|   |   `-- services/                       # Weather and backend clients
+|   |-- package.json
+|   `-- vercel.json
+|-- main_data_electricity.csv
+|-- Model_Train.ipynb
+`-- overall_best_electricity_model.pkl
 ```
-
-The CSV, notebook, and serialized electricity model are repository artifacts for the related electricity model work. The current process prediction route uses the implementation in `backend/app/model.py`; the frontend fallback is separately implemented in `frontend/src/services/surrogate.js`.
 
 ## Run locally
 
-### Prerequisites
+Prerequisites: Python 3.11 or newer, Node.js with npm, and internet access for city/weather lookup.
 
-- Python 3.11 or newer
-- Node.js and npm
-- An internet connection for live weather lookup
+### Backend
 
-### 1. Start the backend
-
-From the repository root, create a virtual environment and install the Python dependencies:
+From the repository root:
 
 ```powershell
 cd backend
@@ -122,20 +133,11 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
-If PowerShell blocks virtual environment activation, you can invoke the environment's Python directly instead:
+The API runs at `http://127.0.0.1:8000`; interactive docs are at `/docs`. In PowerShell, if activation is restricted, use `.venv\Scripts\python.exe -m pip install -r requirements.txt` and `.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000`.
 
-```powershell
-.venv\Scripts\python.exe -m pip install -r requirements.txt
-.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000
-```
+### Frontend
 
-On macOS or Linux, activate with `source .venv/bin/activate` and then run the `pip` and `uvicorn` commands above.
-
-The API is available at `http://127.0.0.1:8000`. Interactive API documentation is at `http://127.0.0.1:8000/docs`; the alternative ReDoc page is at `http://127.0.0.1:8000/redoc`.
-
-### 2. Start the frontend
-
-Open a second terminal from the repository root:
+In a second terminal from the repository root:
 
 ```powershell
 cd frontend
@@ -143,121 +145,68 @@ npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite, usually `http://localhost:5173`.
+To point Vite at the local backend, set `VITE_API_URL=http://127.0.0.1:8000` in `frontend/.env` and restart Vite. The app also supports a backend URL configured through Backend Connection Settings. The frontend defaults to the URL in `frontend/src/config.js` when neither setting is supplied.
 
-To build the static frontend bundle:
+Production frontend commands:
 
-```powershell
+```bash
 npm run build
-```
-
-To serve the built bundle locally for a deployment-style preview:
-
-```powershell
 npm run preview
 ```
 
-### 3. Connect the frontend to the local backend
-
-Copy `frontend/.env.example` to `frontend/.env` and set the backend URL:
-
-```env
-VITE_API_URL=http://127.0.0.1:8000
-```
-
-Restart Vite after changing environment variables. You can also set the backend URL through **Backend Connection Settings** in the app; a saved URL is stored in the browser. If no custom URL or environment variable is provided, the frontend uses the default backend URL in `frontend/src/config.js`.
-
-## Configure the backend connection
-
-The frontend attempts to use the configured backend for predictions, optimization, sensitivity, presets, and model metadata. If a backend request fails or times out, prediction and sensitivity requests use local JavaScript calculations; optimization uses a randomized local search. Backend health and latency are displayed in the interface.
-
-Configuration priority is:
-
-1. A backend URL saved in **Backend Connection Settings** in the browser.
-2. `VITE_API_URL` provided to the frontend build.
-3. The default URL configured in `frontend/src/config.js`.
-
-The backend currently allows cross-origin requests from any origin through its CORS configuration. For a restricted production deployment, replace this with the specific frontend domains you intend to allow.
-
-## API reference
-
-The following routes are exposed by the FastAPI service:
+## Electricity API
 
 | Method | Endpoint | Description |
 | --- | --- | --- |
-| `GET` | `/` | Service status and endpoint summary |
-| `GET` | `/health` | Health check used by deployment platforms and the frontend |
-| `GET` | `/api/info` | Model metadata, process parameter bounds, and target definitions |
-| `GET` | `/api/presets` | Available operating parameter presets |
-| `POST` | `/api/predict` | Process target estimates and environmental impact |
-| `POST` | `/api/optimize` | Optimize process parameters for an objective |
-| `POST` | `/api/sensitivity` | Sweep one process parameter and return target values |
-| `GET` | `/api/ml-performance` | Electricity-model performance summary |
-| `GET` | `/api/feature-importance` | Electricity and process feature importance data |
+| `GET` | `/health` | Backend health and trained electricity model load status |
+| `GET` | `/api/ml-performance` | Model comparison metrics and validation examples |
+| `POST` | `/api/electricity-predict` | Predict daily electricity met for a weather context |
+| `POST` | `/api/electricity-sensitivity` | Evaluate model demand over a supplied temperature list |
+| `POST` | `/api/electricity-optimize` | Search hypothetical temperature/humidity values for a target MU |
 
-For full field definitions, defaults, and response schemas, use `/docs` while the backend is running. The `POST` endpoints validate input using the Pydantic models in `backend/app/schemas.py`.
-
-## Example prediction request
-
-The frontend sends the machine settings and weather context together. A minimal request looks like this:
+Example prediction request:
 
 ```json
 {
-  "pulse_on_time": 35.0,
-  "peak_current": 18.0,
-  "gap_voltage": 60.0,
-  "flushing_pressure": 0.8,
-  "wire_feed_rate": 8.5,
   "weather": {
     "city_name": "Pune",
     "region_name": "Maharashtra",
     "country_name": "India",
-    "temperature": 29.0,
-    "relative_humidity": 55.0,
-    "pressure": 950.0,
-    "wind_speed": 2.5,
-    "precipitation": 0.0,
-    "cloud_cover": 20.0,
-    "weather_condition": "Mainly Clear",
-    "is_anomaly": false
+    "timestamp": "2024-11-05T14:00",
+    "temperature": 32.0,
+    "relative_humidity": 65.0,
+    "wind_speed": 2.4,
+    "wind_direction": 270.0,
+    "cloud_cover": 40.0,
+    "temperature_min": 25.0,
+    "temperature_mean": 30.0,
+    "temperature_max": 34.0,
+    "dew_point": 24.0,
+    "solar_radiation_daily": 18.0
   }
 }
 ```
 
-The weather fields represent the baseline reading. For a simulated scenario, set `is_anomaly` to `true` and provide one or more delta fields, such as `delta_temperature` or `delta_humidity`. The API response contains target metrics, confidence intervals, environmental indicators, feature contributions, a composite score, and a computation timestamp.
+The response includes `consumption_mu`, `baseline_mu`, `uncertainty_mu`, `stress_status`, `model_loaded`, `model_name`, and `source`. Consult `/docs` for the full schemas and current endpoint definitions.
 
 ## Deployment
 
-The frontend and backend are deployed as separate services. Set the frontend's `VITE_API_URL` to the public backend URL so browser requests reach the deployed API.
+The frontend and backend are deployed separately. Deploy the backend changes before expecting the hosted frontend to use the electricity prediction, sensitivity, and optimization routes. Set the Vite build variable `VITE_API_URL` to the deployed backend URL.
 
-### Backend on Render
+### Render backend
 
-The repository includes `backend/render.yaml`. For a manually configured web service, use:
+The repository includes `backend/render.yaml`. For manual setup use root directory `backend`, build command `pip install -r requirements.txt`, start command `uvicorn app.main:app --host 0.0.0.0 --port $PORT`, and health path `/health`. Keep the model artifact and feature medians file in the repository so the service can load them.
 
-- **Root directory:** `backend`
-- **Runtime:** Python
-- **Build command:** `pip install -r requirements.txt`
-- **Start command:** `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-- **Health check path:** `/health`
+### Vercel frontend
 
-After deployment, confirm the health endpoint responds, then copy the service URL for the frontend configuration.
+Set the project root to `frontend`, use the Vite framework preset, and configure `VITE_API_URL` to the backend URL. Redeploy after changing the variable because Vite reads it at build time. Restrict backend CORS origins to the deployed frontend domain for production use.
 
-### Frontend on Vercel
+## Limitations
 
-The repository includes `frontend/vercel.json` for SPA rewrites and long-lived caching of generated assets. Configure the Vercel project with:
-
-- **Root directory:** `frontend`
-- **Framework preset:** Vite
-- **Environment variable:** `VITE_API_URL` set to the deployed backend URL
-
-Deploy again after changing `VITE_API_URL`, since Vite reads it at build time. Also ensure the backend CORS policy allows the deployed frontend origin.
-
-## Model behavior and limitations
-
-- Predictions are estimates from a physics-informed surrogate implementation, not direct measurements from a machine.
-- The backend model and local JavaScript fallback are separate implementations and can produce different results.
-- Local optimization is approximate and uses randomized search; backend optimization is handled by the Python service.
-- Confidence intervals and composite scores are comparison aids and should not be interpreted as guarantees.
-- Live weather lookup requires browser network access. When it is unavailable, the dashboard identifies fallback weather as sample data.
-- Anomaly presets and custom weather adjustments are what-if simulations over the selected city's weather, not meteorological forecasts.
-- Validate any suggested process settings against the actual equipment, material, tooling, and safety procedures before use in production.
+- The target represents regional daily electricity met in MU, not individual household consumption, facility demand, or real-time grid telemetry.
+- Weather inputs are converted to the training feature layout using available current/daily weather plus proxies and training medians; this is not identical to the full source dataset pipeline.
+- The training/evaluation split is a random split of a 20,000-row sample, not a chronological holdout. The reported scores may not represent performance on future years or unseen locations.
+- The model's training data ends in 2024. Runtime clamps the model year feature to 2024 for later dates; this does not add new training data.
+- Performance metrics and the small calibration example set are backend metadata, not recomputed during application startup.
+- Anomaly scenarios and reverse optimization are hypothetical weather what-if analyses. They do not forecast or control the weather.
+- The browser's local fallback is a separate simplified estimate and can differ from the backend Ridge model.
