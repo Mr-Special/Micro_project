@@ -16,12 +16,27 @@ class WeatherContext(BaseModel):
     city_name: str = "Tokyo"
     region_name: str = ""
     country_name: str = ""
+    timestamp: Optional[str] = None
     temperature: float = Field(20.0, description="Ambient Temperature (°C)")
     relative_humidity: float = Field(50.0, description="Relative Humidity (%)")
     pressure: float = Field(1013.25, description="Barometric Pressure (hPa)")
     wind_speed: float = Field(3.5, description="Wind Speed (m/s)")
     precipitation: float = Field(0.0, description="Current precipitation (mm)")
     cloud_cover: float = Field(0.0, description="Cloud cover (%)")
+    wind_direction: Optional[float] = None
+    dew_point: Optional[float] = None
+    apparent_temperature: Optional[float] = None
+    temperature_min: Optional[float] = None
+    temperature_mean: Optional[float] = None
+    temperature_max: Optional[float] = None
+    dew_point_min: Optional[float] = None
+    dew_point_mean: Optional[float] = None
+    dew_point_max: Optional[float] = None
+    cloud_cover_mean: Optional[float] = None
+    solar_radiation_daily: Optional[float] = None
+    apparent_temperature_min: Optional[float] = None
+    apparent_temperature_mean: Optional[float] = None
+    apparent_temperature_max: Optional[float] = None
     weather_condition: str = "Clear Sky"
     is_anomaly: bool = False
     anomaly_type: Optional[str] = None
@@ -31,6 +46,15 @@ class WeatherContext(BaseModel):
     delta_wind_speed: float = 0.0
     delta_precipitation: float = 0.0
     delta_cloud_cover: float = 0.0
+
+class ElectricityPredictionRequest(BaseModel):
+    weather: Optional[WeatherContext] = None
+
+class ElectricityTemperatureSweepRequest(ElectricityPredictionRequest):
+    temperatures: List[float]
+
+class ElectricityOptimizationRequest(ElectricityPredictionRequest):
+    target_mu: float = Field(gt=0)
 
 class PredictionRequest(BaseModel):
     pulse_on_time: float = Field(35.0, description="Pulse-on Duration (µs)")

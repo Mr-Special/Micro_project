@@ -1,4 +1,6 @@
 import os
+import json
+import warnings
 import joblib
 import numpy as np
 from datetime import datetime, timezone
@@ -88,7 +90,203 @@ class MicroProcessSurrogate:
         self.rf_ra = RandomForestRegressor(n_estimators=45, random_state=42)
         self.rf_eff = RandomForestRegressor(n_estimators=45, random_state=42)
         self.electricity_model = self._load_electricity_model()
+        self.electricity_feature_medians = self._load_electricity_feature_medians()
         self._calibrate_models()
+
+    def _load_electricity_feature_medians(self) -> Dict[str, float]:
+        path = os.path.join(os.path.dirname(__file__), "electricity_feature_medians.json")
+        try:
+            with open(path, "r", encoding="utf-8") as feature_file:
+                return {key: float(value) for key, value in json.load(feature_file).items()}
+        except (OSError, ValueError, TypeError):
+            return {}
+
+    @property
+    def electricity_model_loaded(self) -> bool:
+        return self.electricity_model is not None
+
+    def predict_electricity_demand(self, weather: Optional[WeatherContext] = None) -> Dict[str, Any]:
+        """Run the saved electricity Ridge model using its original 57 named features."""
+        now = datetime.now(timezone.utc)
+        if weather and weather.timestamp:
+            try:
+                now = datetime.fromisoformat(weather.timestamp.replace("Z", "+00:00"))
+            except ValueError:
+                pass
+
+        state_baselines = {
+            "maharashtra": 412.5, "gujarat": 365.2, "tamil nadu": 328.0,
+            "uttar pradesh": 384.6, "rajasthan": 224.8, "karnataka": 215.3,
+            "madhya pradesh": 204.1, "andhra pradesh": 192.4, "west bengal": 168.2,
+            "telangana": 182.0, "punjab": 172.5, "haryana": 158.4, "kerala": 84.6,
+            "bihar": 112.3, "odisha": 105.7, "delhi": 126.8
+        }
+        state = (weather.region_name if weather and weather.region_name else "").strip()
+        baseline = state_baselines.get(state.lower(), 185.0)
+        temp_delta = weather.delta_temperature if weather else 0.0
+        humidity_delta = weather.delta_humidity if weather else 0.0
+        effective_temp = (weather.temperature if weather else 28.0) + temp_delta
+        effective_humidity = float(np.clip((weather.relative_humidity if weather else 55.0) + humidity_delta, 0.0, 100.0))
+        base_cloud = weather.cloud_cover_mean if weather and weather.cloud_cover_mean is not None else weather.cloud_cover if weather else 30.0
+        effective_cloud = float(np.clip(base_cloud + (weather.delta_cloud_cover if weather else 0.0), 0.0, 100.0))
+        wind_speed = max(0.0, (weather.wind_speed if weather else 3.5) + (weather.delta_wind_speed if weather else 0.0))
+        direction = weather.wind_direction if weather and weather.wind_direction is not None else None
+
+        model_loaded = self.electricity_model is not None
+        model_name = type(self.electricity_model).__name__ if model_loaded else "Regional weather estimate"
+        source = "trained_model" if model_loaded else "regional_weather_estimate"
+        if model_loaded:
+            names = list(getattr(self.electricity_model, "feature_names_in_", []))
+            values = {name: self.electricity_feature_medians.get(name, 0.0) for name in names}
+            daily_temps = [
+                (weather.temperature_min if weather and weather.temperature_min is not None else effective_temp - temp_delta) + temp_delta,
+                (weather.temperature_mean if weather and weather.temperature_mean is not None else effective_temp - temp_delta) + temp_delta,
+                (weather.temperature_max if weather and weather.temperature_max is not None else effective_temp - temp_delta) + temp_delta
+            ]
+            for suffix, temperature in zip(("min", "mean", "max"), daily_temps):
+                values[f"temp_2m_{suffix}"] = temperature + 273.15
+
+            observed_dew = weather.dew_point if weather and weather.dew_point is not None else None
+            def dewpoint_for(temp_c: float, supplied: Optional[float]) -> float:
+                if supplied is not None and humidity_delta == 0:
+                    return supplied + temp_delta + 273.15
+                a, b = 17.625, 243.04
+                gamma = np.log(max(0.01, effective_humidity) / 100.0) + a * temp_c / (b + temp_c)
+                return float((b * gamma / (a - gamma)) + 273.15)
+
+            dew_values = [
+                weather.dew_point_min if weather else None,
+                weather.dew_point_mean if weather else None,
+                weather.dew_point_max if weather else None
+            ]
+            if observed_dew is not None and all(value is None for value in dew_values):
+                dew_values = [observed_dew] * 3
+            for suffix, temperature, dewpoint in zip(("min", "mean", "max"), daily_temps, dew_values):
+                values[f"dewpoint_2m_{suffix}"] = dewpoint_for(temperature, dewpoint)
+
+            cloud_fraction = effective_cloud / 100.0
+            for suffix in ("min", "mean", "max"):
+                values[f"cloud_cover_{suffix}"] = cloud_fraction
+            apparent = weather.apparent_temperature if weather and weather.apparent_temperature is not None else effective_temp
+            apparent_values = [
+                weather.apparent_temperature_min if weather and weather.apparent_temperature_min is not None else apparent,
+                weather.apparent_temperature_mean if weather and weather.apparent_temperature_mean is not None else apparent,
+                weather.apparent_temperature_max if weather and weather.apparent_temperature_max is not None else apparent
+            ]
+            for suffix, apparent_c in zip(("min", "mean", "max"), apparent_values):
+                values[f"utci_{suffix}"] = apparent_c + temp_delta + 273.15
+            values["utci_national"] = self.electricity_feature_medians.get("utci_national", 298.85)
+
+            if direction is not None:
+                radians = np.deg2rad(direction)
+                u_component = -wind_speed * np.sin(radians)
+                v_component = -wind_speed * np.cos(radians)
+                for suffix in ("min", "mean", "max"):
+                    values[f"u_wind_10m_{suffix}"] = float(u_component)
+                    values[f"v_wind_10m_{suffix}"] = float(v_component)
+
+            # The training data stores accumulated downward shortwave radiation in J/m².
+            if weather and weather.solar_radiation_daily is not None:
+                solar_joules = weather.solar_radiation_daily * 1_000_000.0
+                values["solar_rad_down_min"] = self.electricity_feature_medians.get("solar_rad_down_min", 0.0)
+                values["solar_rad_down_mean"] = solar_joules / 24.0
+                values["solar_rad_down_max"] = solar_joules / 8.0
+
+            # The training series ends in 2024; clamp year to its observed range.
+            values["year"] = float(np.clip(now.year, 2013, 2024))
+            values["month"] = float(now.month)
+            values["day"] = float(now.day)
+            for name in names:
+                if name.startswith("State_"):
+                    values[name] = float(name == f"State_{state}")
+            model_row = np.asarray([[values[name] for name in names]], dtype=float)
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", message="X does not have valid feature names.*", category=UserWarning)
+                prediction = float(np.asarray(self.electricity_model.predict(model_row)).reshape(-1)[0])
+        else:
+            temp_effect = max(0.0, effective_temp - 24.0) * 0.028 - min(0.0, effective_temp - 18.0) * 0.015
+            humidity_effect = max(0.0, effective_humidity - 55.0) * 0.0012
+            cloud_effect = (effective_cloud / 100.0) * -0.015
+            wind_effect = (wind_speed - 3.5) * -0.004
+            prediction = baseline * (1.0 + temp_effect + humidity_effect + cloud_effect + wind_effect)
+
+        prediction = max(0.0, prediction)
+        stress = "Critical Peak Stress" if prediction > baseline * 1.15 else "Elevated Demand" if prediction > baseline * 1.05 else "Nominal Load"
+        return {
+            "consumption_mu": round(prediction, 2),
+            "baseline_mu": round(baseline, 2),
+            "uncertainty_mu": 19.04 if model_loaded else round(prediction * 0.068, 2),
+            "stress_status": stress,
+            "model_loaded": model_loaded,
+            "model_name": model_name,
+            "source": source,
+            "training_year_max": 2024 if model_loaded else None
+        }
+
+    def _weather_at(self, weather: Optional[WeatherContext], temperature: float, humidity: Optional[float] = None) -> WeatherContext:
+        base = weather or WeatherContext()
+        temp_delta = temperature - (base.temperature + base.delta_temperature)
+        updates: Dict[str, Any] = {
+            "temperature": temperature,
+            "temperature_min": temperature,
+            "temperature_mean": temperature,
+            "temperature_max": temperature,
+            "delta_temperature": 0.0,
+            "dew_point": None,
+            "dew_point_min": None,
+            "dew_point_mean": None,
+            "dew_point_max": None,
+            "apparent_temperature": None,
+            "apparent_temperature_min": None,
+            "apparent_temperature_mean": None,
+            "apparent_temperature_max": None,
+        }
+        if humidity is not None:
+            updates["relative_humidity"] = humidity
+            updates["delta_humidity"] = 0.0
+        elif base.apparent_temperature is not None:
+            updates["apparent_temperature"] = base.apparent_temperature + temp_delta
+        return base.model_copy(update=updates)
+
+    def predict_electricity_temperature_sweep(self, weather: Optional[WeatherContext], temperatures: List[float]) -> List[Dict[str, float]]:
+        points = []
+        humidity = weather.relative_humidity + weather.delta_humidity if weather else 55.0
+        for temperature in temperatures:
+            scenario = self._weather_at(weather, float(temperature))
+            scenario.relative_humidity = float(np.clip(humidity, 0.0, 100.0))
+            scenario.delta_humidity = 0.0
+            result = self.predict_electricity_demand(scenario)
+            points.append({"temperature": float(temperature), "consumption": result["consumption_mu"]})
+        return points
+
+    def optimize_electricity_weather(self, weather: Optional[WeatherContext], target_mu: float) -> Dict[str, Any]:
+        """Search hypothetical climate inputs with the same trained model used for live predictions."""
+        candidates = []
+        for temperature in np.arange(-5.0, 50.01, 1.0):
+            for humidity in range(10, 96, 5):
+                scenario = self._weather_at(weather, float(temperature), float(humidity))
+                prediction = self.predict_electricity_demand(scenario)["consumption_mu"]
+                candidates.append((abs(prediction - target_mu), float(temperature), float(humidity), prediction))
+        _, best_temp, best_humidity, best_prediction = min(candidates, key=lambda row: row[0])
+        low_temp, high_temp = max(-5.0, best_temp - 1.0), min(50.0, best_temp + 1.0)
+        for temperature in np.arange(low_temp, high_temp + 0.001, 0.25):
+            for humidity in range(max(10, int(best_humidity) - 5), min(95, int(best_humidity) + 5) + 1):
+                scenario = self._weather_at(weather, float(temperature), float(humidity))
+                prediction = self.predict_electricity_demand(scenario)["consumption_mu"]
+                candidates.append((abs(prediction - target_mu), float(temperature), float(humidity), prediction))
+        error, best_temp, best_humidity, best_prediction = min(candidates, key=lambda row: row[0])
+        predictions = [row[3] for row in candidates]
+        return {
+            "temperature": round(best_temp, 2),
+            "humidity": int(best_humidity),
+            "consumption_mu": round(best_prediction, 2),
+            "error_mu": round(error, 2),
+            "attainable": min(predictions) <= target_mu <= max(predictions),
+            "model_loaded": self.electricity_model_loaded,
+            "model_name": type(self.electricity_model).__name__ if self.electricity_model_loaded else "Regional weather estimate",
+            "source": "trained_model" if self.electricity_model_loaded else "regional_weather_estimate",
+            "hypothetical": True
+        }
 
     def _load_electricity_model(self):
         """Attempts to load overall_best_electricity_model.pkl trained in Model_Train.ipynb"""
@@ -108,54 +306,10 @@ class MicroProcessSurrogate:
 
     def predict_grid_electricity_demand(self, weather: Optional[WeatherContext] = None) -> Tuple[float, str]:
         """
-        Predicts regional daily electricity demand (in MU - Million Units)
-        using the genuine trained Ridge regression methodology on meteorological parameters.
+        Backwards-compatible tuple wrapper for the dedicated electricity model inference.
         """
-        temp = weather.temperature + weather.delta_temperature if weather else 20.0
-        rh = weather.relative_humidity + weather.delta_humidity if weather else 50.0
-        wind = weather.wind_speed + weather.delta_wind_speed if weather else 3.5
-        cloud = weather.cloud_cover + weather.delta_cloud_cover if weather else 10.0
-        state = (weather.region_name if weather and weather.region_name else "National Average").lower()
-
-        # State baseline demand in Million Units (MU) derived from dataset medians
-        state_baselines = {
-            "maharashtra": 412.5,
-            "gujarat": 365.2,
-            "tamil nadu": 328.0,
-            "uttar pradesh": 384.6,
-            "rajasthan": 224.8,
-            "karnataka": 215.3,
-            "madhya pradesh": 204.1,
-            "andhra pradesh": 192.4,
-            "west bengal": 168.2,
-            "telangana": 182.0,
-            "punjab": 172.5,
-            "haryana": 158.4,
-            "kerala": 84.6,
-            "bihar": 112.3,
-            "odisha": 105.7,
-            "delhi": 126.8
-        }
-        base_demand = state_baselines.get(state, 185.0)
-
-        # Weather sensitivity based on Ridge coefficients from Model_Train.ipynb
-        # Cooling degree load increases demand +2.8% per °C above 24°C
-        temp_effect = max(0.0, temp - 24.0) * 0.028 - min(0.0, temp - 18.0) * 0.015
-        humidity_effect = max(0.0, rh - 55.0) * 0.0012
-        cloud_effect = (cloud / 100.0) * -0.015  # Slightly reduced solar heating
-        wind_effect = (wind - 3.5) * -0.004      # Wind convective cooling
-
-        predicted_mu = base_demand * (1.0 + temp_effect + humidity_effect + cloud_effect + wind_effect)
-        predicted_mu = round(max(35.0, predicted_mu), 2)
-
-        if predicted_mu > base_demand * 1.15:
-            stress = "Critical Peak Stress"
-        elif predicted_mu > base_demand * 1.05:
-            stress = "Elevated Demand"
-        else:
-            stress = "Nominal Load"
-
-        return predicted_mu, stress
+        result = self.predict_electricity_demand(weather)
+        return result["consumption_mu"], result["stress_status"]
 
     def _physics_formula(
         self,

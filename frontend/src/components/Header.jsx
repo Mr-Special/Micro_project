@@ -53,14 +53,16 @@ export default function Header({
 
           {/* Center Navigation Switcher Tabs */}
           {onChangeTab && (
-            <nav aria-label="Main sections" className="order-last flex w-full items-center gap-0.5 overflow-x-auto rounded-xl border border-[#E8E2D8] bg-[#F0ECE6] p-1 dark:border-[#34312B] dark:bg-[#22201D] xl:order-none xl:w-auto xl:max-w-[58vw]">
-              {navigation.map(([id, label, Icon]) => (
-                <button key={id} type="button" onClick={() => onChangeTab(id)} aria-current={activeTab === id ? 'page' : undefined} title={label}
-                  className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-2 text-[11px] font-medium transition-all ${activeTab === id ? 'bg-white text-[#1F1E1D] shadow-sm dark:bg-[#181715] dark:text-[#EDE8E1]' : 'text-[#78716C] hover:text-[#1F1E1D] dark:text-[#A8A29E] dark:hover:text-[#EDE8E1]'}`}>
-                  <Icon className="h-3.5 w-3.5 text-[#CC5A2B]" /><span>{label}</span>
-                  {id === 'history' && historyCount > 0 && <span className="rounded-full bg-[#CC5A2B] px-1.5 text-[9px] font-mono font-bold text-white">{historyCount}</span>}
-                </button>
-              ))}
+            <nav aria-label="Main sections" className="order-last w-full min-w-0 overflow-x-auto py-1">
+              <div className="mx-auto flex w-max items-center gap-0.5 rounded-xl border border-[#E8E2D8] bg-[#F0ECE6] p-1 dark:border-[#34312B] dark:bg-[#22201D]">
+                {navigation.map(([id, label, Icon]) => (
+                  <button key={id} type="button" onClick={() => onChangeTab(id)} aria-current={activeTab === id ? 'page' : undefined} title={label}
+                    className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-2 text-[11px] font-medium transition-all ${activeTab === id ? 'bg-white text-[#1F1E1D] shadow-sm dark:bg-[#181715] dark:text-[#EDE8E1]' : 'text-[#78716C] hover:text-[#1F1E1D] dark:text-[#A8A29E] dark:hover:text-[#EDE8E1]'}`}>
+                    <Icon className="h-3.5 w-3.5 text-[#CC5A2B]" /><span>{label}</span>
+                    {id === 'history' && historyCount > 0 && <span className="rounded-full bg-[#CC5A2B] px-1.5 text-[9px] font-mono font-bold text-white">{historyCount}</span>}
+                  </button>
+                ))}
+              </div>
             </nav>
           )}
 

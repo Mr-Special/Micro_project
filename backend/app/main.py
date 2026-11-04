@@ -13,7 +13,10 @@ from app.schemas import (
     SensitivityPoint,
     ModelMetadataResponse,
     MLPerformanceResponse,
-    FeatureImportanceResponse
+    FeatureImportanceResponse,
+    ElectricityPredictionRequest,
+    ElectricityTemperatureSweepRequest,
+    ElectricityOptimizationRequest
 )
 from app.model import (
     surrogate_model,
@@ -108,6 +111,9 @@ def root():
             "/health",
             "/api/info",
             "/api/predict",
+            "/api/electricity-predict",
+            "/api/electricity-sensitivity",
+            "/api/electricity-optimize",
             "/api/optimize",
             "/api/sensitivity",
             "/api/presets",
@@ -119,7 +125,39 @@ def root():
 @app.get("/health")
 def health_check():
     """Render health check endpoint"""
-    return {"status": "healthy", "service": "microoptix-backend", "ready": True}
+    return {
+        "status": "healthy",
+        "service": "microoptix-backend",
+        "ready": True,
+        "electricity_model_loaded": surrogate_model.electricity_model_loaded,
+        "electricity_model_name": type(surrogate_model.electricity_model).__name__ if surrogate_model.electricity_model_loaded else None
+    }
+
+@app.post("/api/electricity-predict")
+def predict_electricity(payload: ElectricityPredictionRequest):
+    """Predict regional daily electricity demand with the saved trained model."""
+    try:
+        return surrogate_model.predict_electricity_demand(payload.weather)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Electricity prediction error: {exc}")
+
+@app.post("/api/electricity-sensitivity")
+def electricity_sensitivity(payload: ElectricityTemperatureSweepRequest):
+    """Return a temperature response curve evaluated by the electricity model."""
+    if not payload.temperatures or len(payload.temperatures) > 60:
+        raise HTTPException(status_code=422, detail="Provide between 1 and 60 temperatures")
+    try:
+        return {"data": surrogate_model.predict_electricity_temperature_sweep(payload.weather, payload.temperatures)}
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Electricity sensitivity error: {exc}")
+
+@app.post("/api/electricity-optimize")
+def optimize_electricity_weather(payload: ElectricityOptimizationRequest):
+    """Find hypothetical weather conditions that best match a demand target."""
+    try:
+        return surrogate_model.optimize_electricity_weather(payload.weather, payload.target_mu)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Electricity optimization error: {exc}")
 
 @app.get("/api/ml-performance", response_model=MLPerformanceResponse)
 def get_performance():

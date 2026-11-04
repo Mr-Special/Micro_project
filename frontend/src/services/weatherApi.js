@@ -86,11 +86,14 @@ export function decodeWmoWeather(code) {
 
 export async function fetchLiveWeather(lat, lon, cityName = 'City', location = {}) {
   try {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,surface_pressure,wind_speed_10m,precipitation,cloud_cover,weather_code&wind_speed_unit=ms&timezone=auto`;
+    const current = 'temperature_2m,relative_humidity_2m,apparent_temperature,surface_pressure,wind_speed_10m,wind_direction_10m,precipitation,cloud_cover,weather_code,dew_point_2m,shortwave_radiation';
+    const daily = 'temperature_2m_min,temperature_2m_mean,temperature_2m_max,dew_point_2m_min,dew_point_2m_mean,dew_point_2m_max,shortwave_radiation_sum,cloud_cover_mean,apparent_temperature_min,apparent_temperature_mean,apparent_temperature_max';
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=${current}&daily=${daily}&wind_speed_unit=ms&timezone=auto`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`Weather API returned ${res.status}`);
     const data = await res.json();
     const cur = data.current;
+    const day = data.daily;
     const wmo = decodeWmoWeather(cur.weather_code);
 
     return {
@@ -102,13 +105,26 @@ export async function fetchLiveWeather(lat, lon, cityName = 'City', location = {
       relative_humidity: Number(cur.relative_humidity_2m.toFixed(0)),
       pressure: Number(cur.surface_pressure.toFixed(1)),
       wind_speed: Number(cur.wind_speed_10m.toFixed(1)),
+      wind_direction: Number(cur.wind_direction_10m ?? 0),
+      solar_radiation_daily: Number(day?.shortwave_radiation_sum?.[0] ?? 0),
+      dew_point: Number(cur.dew_point_2m ?? (cur.temperature_2m - ((100 - cur.relative_humidity_2m) / 5))),
+      temperature_min: Number(day?.temperature_2m_min?.[0] ?? cur.temperature_2m),
+      temperature_mean: Number(day?.temperature_2m_mean?.[0] ?? cur.temperature_2m),
+      temperature_max: Number(day?.temperature_2m_max?.[0] ?? cur.temperature_2m),
+      dew_point_min: Number(day?.dew_point_2m_min?.[0] ?? cur.dew_point_2m ?? cur.temperature_2m),
+      dew_point_mean: Number(day?.dew_point_2m_mean?.[0] ?? cur.dew_point_2m ?? cur.temperature_2m),
+      dew_point_max: Number(day?.dew_point_2m_max?.[0] ?? cur.dew_point_2m ?? cur.temperature_2m),
+      cloud_cover_mean: Number(day?.cloud_cover_mean?.[0] ?? cur.cloud_cover ?? 0),
+      apparent_temperature_min: Number(day?.apparent_temperature_min?.[0] ?? cur.apparent_temperature),
+      apparent_temperature_mean: Number(day?.apparent_temperature_mean?.[0] ?? cur.apparent_temperature),
+      apparent_temperature_max: Number(day?.apparent_temperature_max?.[0] ?? cur.apparent_temperature),
       precipitation: Number((cur.precipitation || 0).toFixed(1)),
       cloud_cover: Number(cur.cloud_cover || 0),
       weather_code: cur.weather_code,
       weather_condition: wmo.label,
       icon: wmo.icon,
       is_live: true,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      timestamp: cur.time || new Date().toISOString()
     };
   } catch (err) {
     // Elegant fallback data if device is offline
