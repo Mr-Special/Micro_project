@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sun, Moon, Server, MapPin, ShieldAlert, House, Sliders, BarChart2, History } from 'lucide-react';
+import { Sun, Moon, Server, MapPin, ShieldAlert, House, Activity, BarChart2, History, AlertTriangle, Sparkles } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import BackendSettingsModal from './BackendSettingsModal';
 
@@ -9,17 +9,18 @@ export default function Header({
   latency,
   weatherContext,
   onHome,
-  activeTab = 'workbench',
+  activeTab = 'dashboard',
   onChangeTab,
   historyCount = 0
 }) {
   const { theme, toggleTheme } = useTheme();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const navigation = [['dashboard', 'Live Consumption Dashboard', Activity], ['anomaly', 'Anomaly Simulator', AlertTriangle], ['optimizer', 'Weather–Energy Optimizer', Sparkles], ['history', 'Historical Analysis', History], ['performance', 'Model Performance', BarChart2]];
 
   return (
     <>
       <header className="dashboard-header sticky top-0 z-30 w-full border-b border-[#E8E2D8] dark:border-[#34312B] bg-[#FAF8F5]/90 dark:bg-[#181715]/90 backdrop-blur-md transition-colors duration-200">
-        <div className="dashboard-header-inner mx-auto flex w-full max-w-none items-center justify-between px-4 py-3 sm:px-7 lg:px-10 2xl:px-14">
+        <div className="dashboard-header-inner mx-auto flex w-full max-w-none flex-wrap items-center justify-between gap-y-2 px-4 py-3 sm:px-7 lg:px-10 2xl:px-14">
           
           {/* Brand Logo & Name (Claude Minimalist styling) */}
           <div className="flex items-center gap-3">
@@ -45,61 +46,22 @@ export default function Header({
                 </span>
               </div>
               <p className="text-[11px] text-[#78716C] dark:text-[#A8A29E] font-medium hidden sm:block">
-                Precision Process AI & Weather Dynamics
+                Electricity Demand AI & Weather Dynamics
               </p>
             </div>
           </div>
 
           {/* Center Navigation Switcher Tabs */}
           {onChangeTab && (
-            <div className="hidden lg:flex items-center p-1 rounded-xl bg-[#F0ECE6] dark:bg-[#22201D] border border-[#E8E2D8] dark:border-[#34312B]">
-              <button
-                type="button"
-                onClick={() => onChangeTab('workbench')}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  activeTab === 'workbench'
-                    ? 'bg-white dark:bg-[#181715] text-[#1F1E1D] dark:text-[#EDE8E1] shadow-sm font-semibold'
-                    : 'text-[#78716C] dark:text-[#A8A29E] hover:text-[#1F1E1D]'
-                }`}
-              >
-                <Sliders className="w-3.5 h-3.5 text-[#CC5A2B]" />
-                <span>Workbench</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => onChangeTab('ml-performance')}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  activeTab === 'ml-performance'
-                    ? 'bg-white dark:bg-[#181715] text-[#1F1E1D] dark:text-[#EDE8E1] shadow-sm font-semibold'
-                    : 'text-[#78716C] dark:text-[#A8A29E] hover:text-[#1F1E1D]'
-                }`}
-              >
-                <BarChart2 className="w-3.5 h-3.5 text-[#CC5A2B]" />
-                <span>ML Performance</span>
-                <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[#CC5A2B]/10 text-[#CC5A2B] font-bold">
-                  R² 0.947
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => onChangeTab('history')}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  activeTab === 'history'
-                    ? 'bg-white dark:bg-[#181715] text-[#1F1E1D] dark:text-[#EDE8E1] shadow-sm font-semibold'
-                    : 'text-[#78716C] dark:text-[#A8A29E] hover:text-[#1F1E1D]'
-                }`}
-              >
-                <History className="w-3.5 h-3.5 text-[#CC5A2B]" />
-                <span>History</span>
-                {historyCount > 0 && (
-                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-[#CC5A2B] text-white font-bold">
-                    {historyCount}
-                  </span>
-                )}
-              </button>
-            </div>
+            <nav aria-label="Main sections" className="order-last flex w-full items-center gap-0.5 overflow-x-auto rounded-xl border border-[#E8E2D8] bg-[#F0ECE6] p-1 dark:border-[#34312B] dark:bg-[#22201D] xl:order-none xl:w-auto xl:max-w-[58vw]">
+              {navigation.map(([id, label, Icon]) => (
+                <button key={id} type="button" onClick={() => onChangeTab(id)} aria-current={activeTab === id ? 'page' : undefined} title={label}
+                  className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-2 text-[11px] font-medium transition-all ${activeTab === id ? 'bg-white text-[#1F1E1D] shadow-sm dark:bg-[#181715] dark:text-[#EDE8E1]' : 'text-[#78716C] hover:text-[#1F1E1D] dark:text-[#A8A29E] dark:hover:text-[#EDE8E1]'}`}>
+                  <Icon className="h-3.5 w-3.5 text-[#CC5A2B]" /><span>{label}</span>
+                  {id === 'history' && historyCount > 0 && <span className="rounded-full bg-[#CC5A2B] px-1.5 text-[9px] font-mono font-bold text-white">{historyCount}</span>}
+                </button>
+              ))}
+            </nav>
           )}
 
           {/* Right Action Controls */}

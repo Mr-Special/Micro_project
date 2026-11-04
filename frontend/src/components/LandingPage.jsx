@@ -13,7 +13,7 @@ export default function LandingPage({ onOpenDashboard }) {
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#CC5A2B] font-serif text-xl text-white">µ</span>
             <span>
               <span className="block font-serif text-lg font-semibold tracking-tight">MicroOptix</span>
-              <span className="hidden text-[10px] uppercase tracking-[0.18em] text-[#78716C] dark:text-[#A8A29E] sm:block">Weather informed process studio</span>
+              <span className="hidden text-[10px] uppercase tracking-[0.18em] text-[#78716C] dark:text-[#A8A29E] sm:block">Weather-energy intelligence</span>
             </span>
           </a>
           <nav className="flex items-center gap-4 sm:gap-7">
@@ -32,13 +32,13 @@ export default function LandingPage({ onOpenDashboard }) {
         <section className="landing-hero grid min-h-[min(760px,calc(100svh-72px))] items-center gap-10 py-12 lg:grid-cols-[1.02fr_0.98fr] lg:gap-12 lg:py-16">
           <div className="landing-copy relative z-10 max-w-3xl py-5 lg:py-10">
             <div className="mb-7 flex items-center gap-3 text-[11px] font-medium uppercase tracking-[0.2em] text-[#78716C] dark:text-[#A8A29E]">
-              <span className="h-px w-9 bg-[#CC5A2B]" /> Process, in context <span className="font-mono tracking-normal text-[#CC5A2B]">01 / 03</span>
+              <span className="h-px w-9 bg-[#CC5A2B]" /> Weather, in context <span className="font-mono tracking-normal text-[#CC5A2B]">01 / 03</span>
             </div>
             <h1 className="max-w-4xl font-serif text-5xl leading-[0.98] tracking-[-0.045em] sm:text-6xl lg:text-7xl 2xl:text-[6.5rem]">
-              The atmosphere is part of the <em className="font-normal text-[#CC5A2B]">process.</em>
+              Weather shapes the <em className="font-normal text-[#CC5A2B]">demand.</em>
             </h1>
             <p className="mt-7 max-w-xl text-base leading-7 text-[#78716C] dark:text-[#A8A29E] sm:text-lg sm:leading-8">
-              See how local weather shifts machining outcomes. Bring live conditions into your process model, then shape a more considered operating setup.
+              See how local weather shifts electricity consumption. Bring live conditions into a demand model, explore anomalies and find the climate behind a target.
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-5">
               <button onClick={onOpenDashboard} className="group inline-flex min-h-12 items-center gap-3 rounded-full bg-[#1F1E1D] px-6 text-sm font-medium text-white transition-all hover:bg-[#CC5A2B] dark:bg-[#EDE8E1] dark:text-[#1F1E1D] dark:hover:bg-[#E07A5F]">
@@ -58,10 +58,10 @@ export default function LandingPage({ onOpenDashboard }) {
             <div className="absolute left-7 top-7 z-10 flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.16em] text-[#78716C] dark:text-[#A8A29E]">
               <span className="h-1.5 w-1.5 rounded-full bg-[#CC5A2B]" /> Environmental study <span className="text-[#CC5A2B]">/ 24.07</span>
             </div>
-            <div className="absolute bottom-7 left-7 z-10 text-[10px] font-mono uppercase tracking-[0.14em] text-[#78716C] dark:text-[#A8A29E]">Fig. 01 <span className="ml-2 normal-case tracking-normal">Weather to workpiece</span></div>
-            <div className="absolute right-7 top-7 z-10 text-right text-[10px] font-mono uppercase tracking-[0.14em] text-[#78716C] dark:text-[#A8A29E]">T∞ <span className="text-[#CC5A2B]">→</span> MRR</div>
+            <div className="absolute bottom-7 left-7 z-10 text-[10px] font-mono uppercase tracking-[0.14em] text-[#78716C] dark:text-[#A8A29E]">Fig. 01 <span className="ml-2 normal-case tracking-normal">Weather to energy</span></div>
+            <div className="absolute right-7 top-7 z-10 text-right text-[10px] font-mono uppercase tracking-[0.14em] text-[#78716C] dark:text-[#A8A29E]">T∞ <span className="text-[#CC5A2B]">→</span> MU</div>
 
-            <svg className="relative z-[1] h-full w-full max-w-[700px] p-8 sm:p-12" viewBox="0 0 640 500" fill="none" role="img" aria-label="An abstract diagram connecting atmospheric conditions with machining output">
+            <svg className="relative z-[1] h-full w-full max-w-[700px] p-8 sm:p-12" viewBox="0 0 640 500" fill="none" role="img" aria-label="An abstract diagram connecting atmospheric conditions with electricity output">
               <defs>
                 <linearGradient id="orbit" x1="130" y1="70" x2="510" y2="420" gradientUnits="userSpaceOnUse">
                   <stop stopColor="#D87550" />
@@ -105,7 +105,7 @@ export default function LandingPage({ onOpenDashboard }) {
               {[
                 ['01', 'Choose a place', 'Select an Indian state and city to set the local context.'],
                 ['02', 'Read the conditions', 'Current temperature, humidity, pressure and wind inform the model.'],
-                ['03', 'Shape the process', 'Compare predicted targets and tune settings around the conditions.']
+                ['03', 'Explore energy demand', 'Compare consumption estimates across current and simulated weather.']
               ].map(([number, title, description]) => (
                 <article key={number} className="landing-step border-t border-[#E8E2D8] py-5 dark:border-[#34312B] sm:px-5 sm:first:pl-0 sm:last:pr-0 sm:first:border-t">
                   <span className="font-mono text-[10px] tracking-widest text-[#CC5A2B]">{number} / 03</span>
@@ -121,7 +121,7 @@ export default function LandingPage({ onOpenDashboard }) {
       <footer className="border-t border-[#E8E2D8] py-5 dark:border-[#34312B]">
         <div className="mx-auto flex w-full items-center justify-between px-5 text-xs text-[#78716C] dark:text-[#A8A29E] sm:px-8 lg:px-12 2xl:px-16">
           <span className="font-serif text-sm font-semibold text-[#1F1E1D] dark:text-[#EDE8E1]">MicroOptix</span>
-          <span className="font-mono text-[10px] uppercase tracking-widest">Weather · Process · Prediction</span>
+          <span className="font-mono text-[10px] uppercase tracking-widest">Weather · Energy · Prediction</span>
         </div>
       </footer>
     </div>

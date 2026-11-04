@@ -460,7 +460,7 @@ export default function WeatherPanel({ weatherContext, onWeatherChange }) {
                   />
                 </div>
               </div>
-              <p className="text-[11px] leading-5 text-[#78716C] dark:text-[#A8A29E]">Wind, precipitation and cloud cover adjust the atmospheric stability score. Temperature, humidity, pressure and machine settings also shape the process target estimates.</p>
+              <p className="text-[11px] leading-5 text-[#78716C] dark:text-[#A8A29E]">Wind, precipitation, cloud cover, temperature, humidity and pressure shape the regional electricity demand estimate.</p>
             </div>}
 
           </motion.div>

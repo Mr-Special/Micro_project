@@ -32,7 +32,6 @@ import { fetchMLPerformance } from '../services/api';
 export default function MLPerformanceDashboard() {
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedXaiTab, setSelectedXaiTab] = useState('electricity'); // 'electricity' | 'process'
 
   useEffect(() => {
     let isMounted = true;
@@ -74,40 +73,7 @@ export default function MLPerformanceDashboard() {
 
   const bestModel = models.find(m => m.is_best) || models[0];
 
-  const processFeatures = [
-    {
-      feature: 'Pulse-on Duration (ton)',
-      importance: 34.2,
-      category: 'Discharge Control',
-      description: 'Controls electrical spark duration per cycle; primary physical driver of crater diameter, depth, and bulk MRR.'
-    },
-    {
-      feature: 'Discharge Current (ip)',
-      importance: 28.6,
-      category: 'Discharge Control',
-      description: 'Amperage delivering plasma thermal energy into the micro-workpiece, dictating melt pool volume.'
-    },
-    {
-      feature: 'Dielectric Flushing (pf)',
-      importance: 18.4,
-      category: 'Fluid Dynamics',
-      description: 'Evacuates molten carbon & debris from the spark gap, preventing secondary discharge arcs.'
-    },
-    {
-      feature: 'Open Gap Voltage (vg)',
-      importance: 11.2,
-      category: 'Electrical Setup',
-      description: 'Determines spark breakdown potential across the deionized water/dielectric dielectric gap.'
-    },
-    {
-      feature: 'Wire Feed Velocity (wf)',
-      importance: 7.6,
-      category: 'Kinematics',
-      description: 'Maintains fresh brass electrode wire advance to avoid localized wire thermal breakage.'
-    }
-  ];
-
-  const currentXaiFeatures = selectedXaiTab === 'electricity' ? feature_importances : processFeatures;
+  const currentXaiFeatures = feature_importances;
 
   return (
     <div className="space-y-8 animate-fadeIn">
@@ -373,38 +339,13 @@ export default function MLPerformanceDashboard() {
               Explainable AI (XAI)
             </span>
             <h3 className="font-serif text-xl font-bold text-[#1F1E1D] dark:text-[#EDE8E1] mt-0.5">
-              Parameter Influence & Importance Attribution
+              Weather Driver Importance
             </h3>
             <p className="text-xs text-[#78716C] dark:text-[#A8A29E] mt-0.5">
-              Empirical Shapley / Gini coefficients explaining which parameters drive the predictions
+              Relative contribution of climate and regional features to electricity demand
             </p>
           </div>
 
-          {/* Toggle between Energy Model and Manufacturing Process Model */}
-          <div className="flex items-center p-1 rounded-xl bg-[#FAF8F5] dark:bg-[#181715] border border-[#E8E2D8] dark:border-[#34312B] self-start md:self-auto">
-            <button
-              type="button"
-              onClick={() => setSelectedXaiTab('electricity')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                selectedXaiTab === 'electricity'
-                  ? 'bg-white dark:bg-[#22201D] text-[#1F1E1D] dark:text-[#EDE8E1] shadow-sm font-semibold'
-                  : 'text-[#78716C] dark:text-[#A8A29E] hover:text-[#1F1E1D]'
-              }`}
-            >
-              Weather & Grid Model
-            </button>
-            <button
-              type="button"
-              onClick={() => setSelectedXaiTab('process')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                selectedXaiTab === 'process'
-                  ? 'bg-[#CC5A2B] text-white shadow-sm font-semibold'
-                  : 'text-[#78716C] dark:text-[#A8A29E] hover:text-[#1F1E1D]'
-              }`}
-            >
-              Manufacturing EDM Model
-            </button>
-          </div>
         </div>
 
         {/* Feature Importance Bar Visualization */}
@@ -438,7 +379,7 @@ export default function MLPerformanceDashboard() {
 
           <div className="lg:col-span-6 space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-[#78716C] dark:text-[#A8A29E]">
-              Physical & Engineering Interpretation
+              Weather & Grid Interpretation
             </h4>
             <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
               {currentXaiFeatures.map((item) => (
@@ -473,7 +414,7 @@ export default function MLPerformanceDashboard() {
           </div>
           <div className="space-y-2 text-xs leading-6 text-[#78716C] dark:text-[#A8A29E]">
             <h4 className="font-serif font-bold text-sm text-[#1F1E1D] dark:text-[#EDE8E1]">
-              Machine Learning Methodology & Formulation
+              Electricity Model Methodology
             </h4>
             <p>
               The system utilizes an ensemble Ridge regularized framework: <code className="bg-white dark:bg-[#22201D] px-1.5 py-0.5 rounded border border-[#E8E2D8] dark:border-[#39362F] font-mono text-[11px]">min_w ||Xw - y||² + α||w||²</code> with penalty parameter <code className="font-mono text-[11px]">α = 1.0</code>. Ridge outperformed Random Forest and Gradient Boosting due to high collinearity among multi-station meteorological time-series and one-hot encoded state indicator features.

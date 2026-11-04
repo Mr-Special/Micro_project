@@ -1,291 +1,86 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  RotateCcw,
-  Sparkles,
-  Sliders,
-  Check,
-  BarChart2,
-  History
-} from 'lucide-react';
+import { Activity, AlertTriangle, ArrowDownRight, ArrowUpRight, BarChart2, Check, History, Save, Sparkles, Zap } from 'lucide-react';
+import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import Header from './components/Header';
 import WeatherPanel from './components/WeatherPanel';
-import ParameterSlider from './components/ParameterSlider';
-import PredictionDisplay from './components/PredictionDisplay';
-import OptimizationModal from './components/OptimizationModal';
-import SensitivityChart from './components/SensitivityChart';
-import PresetScenarios from './components/PresetScenarios';
 import MLPerformanceDashboard from './components/MLPerformanceDashboard';
-import PredictionHistory from './components/PredictionHistory';
 import LandingPage from './components/LandingPage';
-import { PARAM_CONFIGS, DEFAULT_PARAMETERS } from './services/surrogate';
 import useBackendHealth from './hooks/useBackendHealth';
-import usePrediction from './hooks/usePrediction';
 import useToast from './hooks/useToast';
+import { consumptionHistorySeries, consumptionWeatherSeries, optimizeWeather, predictElectricity } from './services/electricity';
 
-const STORAGE_KEY_HISTORY = 'microoptix_prediction_history';
+const NAV = [
+  ['dashboard', 'Live Consumption Dashboard', Activity],
+  ['anomaly', 'Anomaly Simulator', AlertTriangle],
+  ['optimizer', 'Weather–Energy Optimizer', Sparkles],
+  ['history', 'Historical Analysis', History],
+  ['performance', 'Model Performance', BarChart2]
+];
+const HISTORY_KEY = 'microoptix_electricity_history';
+
+function MetricCard({ label, value, unit, note, icon: Icon, accent = false }) {
+  return <div className="claude-card min-w-0 p-5 sm:p-6">
+    <div className="flex items-center justify-between"><span className="text-xs text-[#78716C] dark:text-[#A8A29E]">{label}</span><span className={`flex h-9 w-9 items-center justify-center rounded-xl ${accent ? 'bg-[#CC5A2B] text-white' : 'bg-[#FAF8F5] text-[#CC5A2B] dark:bg-[#181715]'}`}><Icon className="h-4 w-4" /></span></div>
+    <div className="mt-4 font-serif text-3xl font-semibold text-[#1F1E1D] dark:text-[#EDE8E1]">{value}<span className="ml-1.5 text-sm font-medium text-[#78716C] dark:text-[#A8A29E]">{unit}</span></div>
+    <p className="mt-1 text-[11px] text-[#78716C] dark:text-[#A8A29E]">{note}</p>
+  </div>;
+}
 
 export default function App() {
   const [page, setPage] = useState('home');
-  const [dashboardTab, setDashboardTab] = useState('workbench'); // 'workbench' | 'ml-performance' | 'history'
-  const [parameters, setParameters] = useState(DEFAULT_PARAMETERS);
+  const [section, setSection] = useState('dashboard');
   const [weatherContext, setWeatherContext] = useState(null);
-  const [isOptimizeOpen, setIsOptimizeOpen] = useState(false);
+  const [target, setTarget] = useState('');
+  const [optimized, setOptimized] = useState(null);
+  const [history, setHistory] = useState(() => { try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch { return []; } });
   const { isBackendOnline, latency } = useBackendHealth();
-  const { prediction, isCalculating } = usePrediction(parameters, weatherContext);
   const { message: toastMessage, showToast } = useToast();
+  const prediction = useMemo(() => predictElectricity(weatherContext), [weatherContext]);
+  const climateSeries = useMemo(() => consumptionWeatherSeries(weatherContext), [weatherContext]);
+  const historicalSeries = useMemo(() => consumptionHistorySeries(history), [history]);
 
-  const [historyItems, setHistoryItems] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_HISTORY);
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  useEffect(() => { try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history)); } catch {} }, [history]);
+  if (page === 'home') return <LandingPage onOpenDashboard={() => setPage('dashboard')} />;
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(historyItems));
-    } catch {
-      // Ignore storage quota edge cases
-    }
-  }, [historyItems]);
-
-  const handleParameterChange = useCallback((name, value) => {
-    setParameters(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  }, []);
-
-  if (page === 'home') {
-    return <LandingPage onOpenDashboard={() => setPage('dashboard')} />;
-  }
-
-  const handleResetDefaults = () => {
-    setParameters(DEFAULT_PARAMETERS);
-    showToast('Reset operating parameters to baseline');
+  const title = NAV.find(([id]) => id === section)?.[1] || NAV[0][1];
+  const saveReading = () => {
+    setHistory(items => [{ id: Date.now(), timestamp: new Date().toLocaleString(), city: weatherContext?.city_name || 'National Average', region: weatherContext?.region_name || '', consumption: prediction.consumption, baseline: prediction.baseline, temperature: prediction.temperature, humidity: prediction.humidity, anomaly: weatherContext?.anomaly_type || null }, ...items].slice(0, 100));
+    showToast('Electricity reading saved to history');
+  };
+  const runOptimizer = () => {
+    const numericTarget = Number(target);
+    if (!Number.isFinite(numericTarget) || numericTarget <= 0) { showToast('Enter a target consumption above zero'); return; }
+    setOptimized(optimizeWeather(weatherContext, numericTarget));
   };
 
-  const handleSelectPreset = (presetParams) => {
-    setParameters(presetParams);
-    showToast('Applied operating preset configuration');
-  };
+  return <div className="dashboard-canvas min-h-screen flex flex-col text-[#1F1E1D] dark:text-[#EDE8E1] transition-colors duration-200">
+    <Header isBackendOnline={isBackendOnline} latency={latency} weatherContext={weatherContext} onHome={() => setPage('home')} activeTab={section} onChangeTab={setSection} historyCount={history.length} />
+    <AnimatePresence>{toastMessage && <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="fixed top-20 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-xl border border-white/10 bg-[#1F1E1D] px-4 py-2 text-xs text-white shadow-xl" role="status"><Check className="h-3.5 w-3.5 text-[#CC5A2B]" />{toastMessage}</motion.div>}</AnimatePresence>
+    <main className="dashboard-main mx-auto w-full max-w-[1600px] flex-1 space-y-7 px-4 py-6 sm:px-7 lg:px-10 lg:py-9 2xl:px-14">
+      <section className="dashboard-intro relative overflow-hidden rounded-[1.75rem] border border-[#E8E2D8] p-6 shadow-[0_16px_60px_-40px_rgba(83,49,32,0.35)] dark:border-[#39362F] sm:p-9 lg:px-12 lg:py-10">
+        <div className="pointer-events-none absolute -right-12 -top-36 h-96 w-96 rounded-full border border-[#CC5A2B]/15" />
+        <div className="relative z-10 flex flex-col justify-between gap-6 sm:flex-row sm:items-end"><div><p className="mb-3 flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.2em] text-[#CC5A2B]"><span className="h-px w-7 bg-[#CC5A2B]" /> MicroOptix AI <span className="text-[#78716C] dark:text-[#A8A29E]">/ Electricity intelligence</span></p><h1 className="font-serif text-3xl tracking-[-0.04em] sm:text-5xl">{title}</h1><p className="mt-3 max-w-2xl text-sm leading-6 text-[#78716C] dark:text-[#A8A29E]">Weather-aware electricity consumption prediction, scenario analysis and reverse climate optimization.</p></div><div className="rounded-xl border border-[#E8E2D8] bg-white/70 px-4 py-3 text-xs dark:border-[#39362F] dark:bg-[#22201D]/70"><span className="text-[#78716C] dark:text-[#A8A29E]">Current estimate</span><div className="mt-1 font-mono font-semibold text-[#CC5A2B]">{prediction.consumption.toFixed(2)} MU / day</div></div></div>
+      </section>
 
-  const handleApplyOptimal = (optimalParams) => {
-    setParameters(optimalParams);
-    showToast('Applied weather-optimized parameters');
-  };
+      <section className="dashboard-section space-y-4">
+        <div className="flex flex-wrap items-end justify-between gap-3 px-1"><div><p className="mb-1 flex items-center gap-3 text-[10px] font-mono tracking-[0.18em] text-[#CC5A2B]"><span>01</span><span className="h-px w-7 bg-[#CC5A2B]/50" /> LIVE WEATHER INPUT</p><h2 className="font-serif text-2xl tracking-tight sm:text-3xl">Location & climate conditions</h2></div><p className="max-w-md text-xs leading-5 text-[#78716C] dark:text-[#A8A29E]">Select an Indian location. Simulated weather scenarios update the demand estimate in real time.</p></div>
+        <WeatherPanel weatherContext={weatherContext} onWeatherChange={setWeatherContext} />
+      </section>
 
-  return (
-    <div className="dashboard-canvas min-h-screen flex flex-col text-[#1F1E1D] dark:text-[#EDE8E1] transition-colors duration-200">
-      
-      {/* Header */}
-      <Header
-        isBackendOnline={isBackendOnline}
-        latency={latency}
-        weatherContext={weatherContext}
-        onHome={() => setPage('home')}
-      />
+      {section === 'dashboard' && <div className="space-y-6 animate-fadeIn">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><MetricCard label="Predicted daily consumption" value={prediction.consumption.toFixed(2)} unit="MU" note={weatherContext?.city_name || 'National average'} icon={Zap} accent /><MetricCard label="Regional baseline" value={prediction.baseline.toFixed(1)} unit="MU" note="Typical daily demand" icon={Activity} /><MetricCard label="Weather impact" value={`${prediction.consumption >= prediction.baseline ? '+' : ''}${(prediction.consumption - prediction.baseline).toFixed(1)}`} unit="MU" note={prediction.stress} icon={prediction.consumption >= prediction.baseline ? ArrowUpRight : ArrowDownRight} /><MetricCard label="Prediction range" value={`±${prediction.variance}`} unit="MU" note="Estimated model uncertainty" icon={BarChart2} /></div>
+        <div className="grid gap-5 lg:grid-cols-5"><section className="claude-card p-5 sm:p-6 lg:col-span-3"><div className="mb-5 flex items-start justify-between"><div><h3 className="font-serif text-lg font-semibold">Temperature vs consumption</h3><p className="mt-1 text-xs text-[#78716C] dark:text-[#A8A29E]">Estimated regional demand across a temperature range</p></div><span className="rounded-lg bg-[#CC5A2B]/10 px-2.5 py-1 text-[10px] font-mono text-[#CC5A2B]">MU / day</span></div><div className="h-64"><ResponsiveContainer width="100%" height="100%"><LineChart data={climateSeries} margin={{ top: 8, right: 12, left: -18, bottom: 0 }}><CartesianGrid strokeDasharray="3 3" stroke="#E8E2D8" /><XAxis dataKey="temperature" tickFormatter={v => `${v}°`} tick={{ fontSize: 10, fill: '#78716C' }} /><YAxis tick={{ fontSize: 10, fill: '#78716C' }} /><Tooltip contentStyle={{ borderRadius: 12, borderColor: '#E8E2D8', fontSize: 12 }} formatter={v => [`${Number(v).toFixed(1)} MU`, 'Demand']} labelFormatter={v => `${v}°C`} /><ReferenceLine x={prediction.temperature} stroke="#CC5A2B" strokeDasharray="4 4" /><Line type="monotone" dataKey="consumption" stroke="#CC5A2B" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} /></LineChart></ResponsiveContainer></div></section><section className="claude-card flex flex-col justify-between p-5 sm:p-6 lg:col-span-2"><div><div className="flex items-center gap-2"><span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#CC5A2B]/10 text-[#CC5A2B]"><Activity className="h-4 w-4" /></span><h3 className="font-serif text-lg font-semibold">Grid demand status</h3></div><div className="mt-7"><p className="font-serif text-3xl">{prediction.stress}</p><p className="mt-2 text-sm leading-6 text-[#78716C] dark:text-[#A8A29E]">The estimate includes temperature, humidity, wind and cloud coverage for {weatherContext?.region_name || 'the national average'}.</p></div></div><button onClick={saveReading} className="primary-button mt-6 self-start"><Save className="h-3.5 w-3.5" />Save this reading</button></section></div>
+      </div>}
 
-      {/* Toast Notification */}
-      <AnimatePresence>
-        {toastMessage && (
-          <motion.div
-            initial={{ opacity: 0, y: -20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.95 }}
-            className="fixed top-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1F1E1D] text-white text-xs font-medium shadow-xl border border-white/10"
-            role="status"
-            aria-live="polite"
-          >
-            <Check className="w-3.5 h-3.5 text-[#CC5A2B]" />
-            <span>{toastMessage}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {section === 'anomaly' && <section className="claude-card space-y-5 p-5 sm:p-7 animate-fadeIn"><div className="flex items-start gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#CC5A2B]/10 text-[#CC5A2B]"><AlertTriangle className="h-4 w-4" /></span><div><h2 className="font-serif text-xl font-semibold">Electricity consumption anomaly simulator</h2><p className="mt-1 text-sm leading-6 text-[#78716C] dark:text-[#A8A29E]">Apply weather events or custom climate offsets above and see their estimated effect on regional electricity demand.</p></div></div><div className="grid gap-3 sm:grid-cols-3"><div className="rounded-xl border border-[#E8E2D8] bg-[#FAF8F5] p-4 dark:border-[#39362F] dark:bg-[#181715]"><span className="text-[10px] uppercase tracking-wider text-[#78716C]">Scenario</span><p className="mt-1 font-semibold">{weatherContext?.anomaly_type || (weatherContext?.is_anomaly ? 'Custom climate scenario' : 'Baseline weather')}</p></div><div className="rounded-xl border border-[#E8E2D8] bg-[#FAF8F5] p-4 dark:border-[#39362F] dark:bg-[#181715]"><span className="text-[10px] uppercase tracking-wider text-[#78716C]">Consumption estimate</span><p className="mt-1 font-mono font-semibold text-[#CC5A2B]">{prediction.consumption.toFixed(2)} MU / day</p></div><div className="rounded-xl border border-[#E8E2D8] bg-[#FAF8F5] p-4 dark:border-[#39362F] dark:bg-[#181715]"><span className="text-[10px] uppercase tracking-wider text-[#78716C]">Change from baseline</span><p className="mt-1 font-mono font-semibold">{prediction.consumption >= prediction.baseline ? '+' : ''}{(prediction.consumption - prediction.baseline).toFixed(2)} MU / day</p></div></div><button onClick={saveReading} className="secondary-button inline-flex items-center gap-2"><Save className="h-3.5 w-3.5" />Save scenario to history</button></section>}
 
-      {/* Main Content Dashboard */}
-      <main className="dashboard-main mx-auto w-full max-w-[1600px] flex-1 space-y-9 px-4 py-6 sm:px-7 lg:space-y-12 lg:px-10 lg:py-10 2xl:px-14">
-        
-        {/* Mission Banner (Claude Minimalist Aesthetic) */}
-        <section className="dashboard-intro relative isolate overflow-hidden rounded-[1.75rem] border border-[#E8E2D8] shadow-[0_16px_60px_-40px_rgba(83,49,32,0.35)] dark:border-[#39362F] dark:shadow-black/20">
-          <div className="dashboard-intro-orbit pointer-events-none absolute -right-10 -top-32 h-[30rem] w-[30rem] rounded-full border border-[#CC5A2B]/15" />
-          <div className="dashboard-intro-orbit pointer-events-none absolute -right-2 -top-24 h-[24rem] w-[24rem] rounded-full border border-[#CC5A2B]/20" />
-          <div className="relative z-10 grid gap-7 p-6 sm:p-9 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:px-12 lg:py-12 xl:px-14 xl:py-14">
-            <div className="max-w-4xl">
-              <p className="mb-4 flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.2em] text-[#CC5A2B]">
-                <span className="h-px w-7 bg-[#CC5A2B]" /> Process studio <span className="text-[#78716C] dark:text-[#A8A29E]">/ Workbench 01</span>
-              </p>
-              <h1 className="font-serif text-4xl leading-[0.98] tracking-[-0.04em] sm:text-5xl lg:text-6xl xl:text-7xl">
-                A better process starts with <em className="font-normal text-[#CC5A2B]">context.</em>
-              </h1>
-              <p className="mt-5 max-w-2xl text-sm leading-6 text-[#78716C] dark:text-[#A8A29E] sm:text-base sm:leading-7">
-                Local weather and machine settings, brought into one clear view. Tune the inputs and see the predicted result respond.
-              </p>
-            </div>
+      {section === 'optimizer' && <section className="grid gap-5 lg:grid-cols-5 animate-fadeIn"><div className="claude-card space-y-5 p-5 sm:p-7 lg:col-span-2"><div><p className="target-index text-[#CC5A2B]">Reverse weather search</p><h2 className="mt-1 font-serif text-xl font-semibold">Find the climate for a demand target</h2><p className="mt-2 text-sm leading-6 text-[#78716C] dark:text-[#A8A29E]">Search plausible temperature and humidity conditions that best match a target daily demand. Weather conditions are modeled as scenarios.</p></div><label className="block text-xs font-medium">Target consumption <span className="text-[#78716C]">(MU / day)</span><input type="number" min="1" step="1" value={target} onChange={e => setTarget(e.target.value)} placeholder={prediction.consumption.toFixed(0)} className="mt-2 w-full rounded-xl border border-[#E8E2D8] bg-white px-3 py-2.5 font-mono text-sm dark:border-[#39362F] dark:bg-[#181715]" /></label><button onClick={runOptimizer} className="primary-button"><Sparkles className="h-3.5 w-3.5" />Find matching weather</button></div><div className="claude-card flex min-h-64 flex-col justify-center p-5 sm:p-7 lg:col-span-3">{optimized ? <><p className="text-[10px] font-mono uppercase tracking-widest text-[#CC5A2B]">Recommended scenario</p><h3 className="mt-3 font-serif text-3xl">{optimized.consumption.toFixed(2)} MU / day</h3><div className="mt-5 grid gap-3 sm:grid-cols-3"><div className="rounded-xl bg-[#FAF8F5] p-4 dark:bg-[#181715]"><span className="text-xs text-[#78716C]">Temperature</span><p className="mt-1 font-mono text-lg">{optimized.temperature.toFixed(1)} °C</p></div><div className="rounded-xl bg-[#FAF8F5] p-4 dark:bg-[#181715]"><span className="text-xs text-[#78716C]">Relative humidity</span><p className="mt-1 font-mono text-lg">{optimized.humidity} %</p></div><div className="rounded-xl bg-[#FAF8F5] p-4 dark:bg-[#181715]"><span className="text-xs text-[#78716C]">Target difference</span><p className="mt-1 font-mono text-lg">{optimized.error.toFixed(2)} MU</p></div></div><p className="mt-4 text-xs text-[#78716C] dark:text-[#A8A29E]">{optimized.attainable ? 'A close match was found within the searched climate range.' : 'The target is outside the modeled range; this is the closest scenario found.'}</p></> : <div className="text-center"><Sparkles className="mx-auto h-8 w-8 text-[#CC5A2B]" /><h3 className="mt-3 font-serif text-xl">Set a target to begin</h3><p className="mt-2 text-sm text-[#78716C] dark:text-[#A8A29E]">The optimizer will return estimated weather conditions for that consumption level.</p></div>}</div></section>}
 
-            <div className="dashboard-flow relative mx-auto flex w-full max-w-2xl items-center justify-between gap-2 px-2 py-8 sm:px-5 lg:min-h-64 lg:px-2">
-              <div className="absolute left-[12%] right-[12%] top-1/2 h-px -translate-y-1/2 bg-gradient-to-r from-[#CC5A2B]/15 via-[#CC5A2B]/70 to-[#CC5A2B]/15" />
-              <div className="absolute left-[30%] top-[calc(50%-4px)] h-2 w-2 rounded-full bg-[#CC5A2B] shadow-[0_0_16px_rgba(204,90,43,0.7)]" />
-              <div className="absolute left-[67%] top-[calc(50%-4px)] h-2 w-2 rounded-full bg-[#CC5A2B] shadow-[0_0_16px_rgba(204,90,43,0.7)]" />
-              {[
-                ['01', 'Weather', 'Local signal'],
-                ['02', 'Model', 'Process inputs'],
-                ['03', 'Targets', 'Predicted output']
-              ].map(([number, title, caption], index) => (
-                <div key={number} className={`relative z-[1] flex flex-col gap-2 ${index === 1 ? 'translate-y-[-1.25rem]' : 'translate-y-5'}`}>
-                  <span className="font-mono text-[10px] tracking-widest text-[#CC5A2B]">{number} / 03</span>
-                  <div className={`flex h-14 w-14 items-center justify-center rounded-2xl border shadow-lg shadow-black/5 sm:h-16 sm:w-16 ${index === 1 ? 'border-[#CC5A2B]/60 bg-[#CC5A2B] text-white' : 'border-[#E8E2D8] bg-[#FAF8F5] text-[#1F1E1D] dark:border-[#39362F] dark:bg-[#292723] dark:text-[#EDE8E1]'}`}>
-                    <span className="font-serif text-2xl">{index === 0 ? '°' : index === 1 ? 'µ' : '↗'}</span>
-                  </div>
-                  <span className="font-serif text-lg font-semibold">{title}</span>
-                  <span className="text-[10px] text-[#78716C] dark:text-[#A8A29E]">{caption}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="absolute bottom-0 left-0 h-1 w-1/3 bg-gradient-to-r from-[#CC5A2B] to-transparent" />
-        </section>
+      {section === 'history' && <section className="space-y-5 animate-fadeIn"><div className="claude-card flex flex-col justify-between gap-4 p-5 sm:flex-row sm:items-center sm:p-6"><div><h2 className="font-serif text-xl font-semibold">Historical consumption analysis</h2><p className="mt-1 text-xs text-[#78716C] dark:text-[#A8A29E]">Saved model readings are stored in this browser.</p></div><div className="flex gap-2"><button onClick={saveReading} className="secondary-button inline-flex items-center gap-2"><Save className="h-3.5 w-3.5" />Save current reading</button><button onClick={() => { setHistory([]); showToast('Electricity history cleared'); }} disabled={!history.length} className="secondary-button disabled:opacity-40">Clear history</button></div></div><div className="claude-card p-5 sm:p-6"><h3 className="font-serif text-lg font-semibold">Saved daily demand</h3><div className="mt-4 h-64">{historicalSeries.length ? <ResponsiveContainer width="100%" height="100%"><LineChart data={historicalSeries} margin={{ top: 8, right: 12, left: -18, bottom: 0 }}><CartesianGrid strokeDasharray="3 3" stroke="#E8E2D8" /><XAxis dataKey="run" tick={{ fontSize: 10, fill: '#78716C' }} /><YAxis tick={{ fontSize: 10, fill: '#78716C' }} /><Tooltip contentStyle={{ borderRadius: 12, borderColor: '#E8E2D8', fontSize: 12 }} /><Line type="monotone" dataKey="consumption" name="Consumption (MU)" stroke="#CC5A2B" strokeWidth={2.5} activeDot={{ r: 4 }} /></LineChart></ResponsiveContainer> : <div className="flex h-full flex-col items-center justify-center text-center"><History className="h-7 w-7 text-[#CC5A2B]" /><p className="mt-3 font-serif">No saved readings yet</p><p className="mt-1 text-xs text-[#78716C] dark:text-[#A8A29E]">Save a dashboard reading or anomaly scenario to build history.</p></div>}</div></div>{history.length > 0 && <div className="claude-card overflow-hidden"><div className="grid grid-cols-[1.2fr_1fr_1fr_0.8fr] gap-3 border-b border-[#E8E2D8] px-4 py-3 text-[10px] font-mono uppercase tracking-wider text-[#78716C] dark:border-[#39362F] sm:px-6"><span>Location / time</span><span>Scenario</span><span>Temperature</span><span>Consumption</span></div>{history.slice(0, 10).map(item => <div key={item.id} className="grid grid-cols-[1.2fr_1fr_1fr_0.8fr] gap-3 border-b border-[#E8E2D8]/70 px-4 py-3 text-xs last:border-0 dark:border-[#39362F]/70 sm:px-6"><span className="truncate">{item.city}<small className="block text-[10px] text-[#78716C]">{item.timestamp}</small></span><span className="truncate">{item.anomaly || 'Baseline'}</span><span>{item.temperature} °C</span><span className="font-mono font-semibold text-[#CC5A2B]">{item.consumption} MU</span></div>)}</div>}</section>}
 
-        {/* WEATHER & ANOMALY PANEL (Open-Meteo Live API) */}
-        <section className="dashboard-section space-y-4">
-          <div className="flex flex-wrap items-end justify-between gap-3 px-1">
-            <div>
-              <p className="mb-1 flex items-center gap-3 text-[10px] font-mono tracking-[0.18em] text-[#CC5A2B]"><span>01</span><span className="h-px w-7 bg-[#CC5A2B]/50" /> LIVE CONTEXT</p>
-              <h2 className="font-serif text-2xl tracking-tight sm:text-3xl">Location & atmosphere</h2>
-            </div>
-            <p className="max-w-md text-xs leading-5 text-[#78716C] dark:text-[#A8A29E]">Set the local conditions that inform every process prediction.</p>
-          </div>
-          <WeatherPanel
-            weatherContext={weatherContext}
-            onWeatherChange={(newWeather) => setWeatherContext(newWeather)}
-          />
-        </section>
-
-        {/* Industry Presets */}
-        <section className="dashboard-section space-y-4">
-          <div className="flex flex-wrap items-end justify-between gap-3 px-1">
-            <div>
-              <p className="mb-1 flex items-center gap-3 text-[10px] font-mono tracking-[0.18em] text-[#CC5A2B]"><span>02</span><span className="h-px w-7 bg-[#CC5A2B]/50" /> PROCESS LIBRARY</p>
-              <h2 className="font-serif text-2xl tracking-tight sm:text-3xl">Starting points</h2>
-            </div>
-            <p className="max-w-md text-xs leading-5 text-[#78716C] dark:text-[#A8A29E]">Choose a proven setup, then refine it for today’s conditions.</p>
-          </div>
-          <PresetScenarios
-            onSelectPreset={handleSelectPreset}
-            currentParameters={parameters}
-          />
-        </section>
-
-        {/* Split Grid: Left = Sliders / Inputs, Right = Predictions & Analytics */}
-        <section className="dashboard-section space-y-4">
-        <div className="flex flex-wrap items-end justify-between gap-3 px-1">
-          <div><p className="mb-1 flex items-center gap-3 text-[10px] font-mono tracking-[0.18em] text-[#CC5A2B]"><span>03</span><span className="h-px w-7 bg-[#CC5A2B]/50" /> MODEL WORKBENCH</p><h2 className="font-serif text-2xl tracking-tight sm:text-3xl">Tune & evaluate</h2></div>
-          <p className="max-w-md text-xs leading-5 text-[#78716C] dark:text-[#A8A29E]">Adjust machine inputs and compare their predicted outcomes.</p>
-        </div>
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 xl:gap-8 2xl:gap-10">
-          
-          {/* Left Column: Parameter Controls (5 cols) */}
-          <div className="dashboard-section-card lg:col-span-5 space-y-4">
-            
-            <div className="flex items-center justify-between pb-1">
-              <div className="flex items-center gap-2">
-                <Sliders className="w-4 h-4 text-[#CC5A2B]" />
-                <h3 className="font-serif text-lg font-semibold text-[#1F1E1D] dark:text-[#EDE8E1]">
-                  Operating parameters
-                </h3>
-              </div>
-              <button
-                onClick={handleResetDefaults}
-                className="flex items-center gap-1 text-[11px] text-[#78716C] hover:text-[#CC5A2B] transition-colors"
-              >
-                <RotateCcw className="w-3 h-3" />
-                <span>Reset</span>
-              </button>
-            </div>
-
-            {/* Parameter Sliders */}
-            <div className="space-y-3">
-              {PARAM_CONFIGS.map((config, index) => (
-                <ParameterSlider
-                  key={config.name}
-                  config={config}
-                  index={String(index + 1).padStart(2, '0')}
-                  value={parameters[config.name] ?? config.default_val}
-                  onChange={handleParameterChange}
-                />
-              ))}
-            </div>
-
-          </div>
-
-          {/* Right Column: Model Predictions, Targets & Sensitivity (7 cols) */}
-          <div className="lg:col-span-7 space-y-6">
-            {weatherContext ? (
-              <>
-                <PredictionDisplay
-                  predictionData={prediction}
-                  isCalculating={isCalculating}
-                />
-                <SensitivityChart
-                  currentParameters={parameters}
-                  weatherContext={weatherContext}
-                />
-              </>
-            ) : (
-              <section className="claude-card flex min-h-64 flex-col justify-center p-6 sm:p-8">
-                <p className="text-xs font-semibold uppercase tracking-wider text-[#CC5A2B]">Prediction</p>
-                <h2 className="mt-3 text-xl font-semibold">Choose a location to begin</h2>
-                <p className="mt-2 max-w-md text-sm leading-6 text-[#78716C] dark:text-[#A8A29E]">
-                  Choose a state and city above to load current weather for the prediction.
-                </p>
-              </section>
-            )}
-          </div>
-
-        </div>
-        </section>
-
-        <section className="dashboard-bottom-optimizer claude-card flex flex-col items-start gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-          <div>
-            <p className="target-index text-[#CC5A2B]">Ready to refine</p>
-            <h2 className="mt-1 font-serif text-xl font-semibold text-[#1F1E1D] dark:text-[#EDE8E1]">Find a stronger operating setup</h2>
-            <p className="mt-1 text-sm text-[#78716C] dark:text-[#A8A29E]">Run the optimizer against your selected process settings and weather.</p>
-          </div>
-          <button disabled={!weatherContext} onClick={() => setIsOptimizeOpen(true)} className="primary-button w-full shrink-0 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto">
-            <Sparkles className="h-3.5 w-3.5" /><span>Launch optimizer</span>
-          </button>
-        </section>
-
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t border-[#E8E2D8] dark:border-[#34312B] py-6 mt-12 text-center text-xs text-[#78716C] dark:text-[#A8A29E]">
-        <div className="mx-auto flex w-full max-w-none flex-col items-center justify-between gap-2 px-4 sm:flex-row sm:px-7 lg:px-10 2xl:px-14">
-          <div className="flex items-center gap-2">
-            <span className="font-serif font-bold text-[#1F1E1D] dark:text-[#EDE8E1]">MicroOptix</span>
-            <span>•</span>
-              <span>Process dashboard</span>
-            <span>•</span>
-            <span>Open-Meteo Weather API Integration</span>
-          </div>
-          <div className="flex items-center gap-3 text-[11px] font-mono">
-            <span>Vercel + Render Ready</span>
-          </div>
-        </div>
-      </footer>
-
-      {/* Optimizer Modal */}
-      <OptimizationModal
-        isOpen={isOptimizeOpen}
-        onClose={() => setIsOptimizeOpen(false)}
-        currentParameters={parameters}
-        weatherContext={weatherContext}
-        onApplyOptimal={handleApplyOptimal}
-      />
-
-    </div>
-  );
+      {section === 'performance' && <MLPerformanceDashboard />}
+    </main>
+    <footer className="mt-10 border-t border-[#E8E2D8] py-6 text-center text-xs text-[#78716C] dark:border-[#34312B] dark:text-[#A8A29E]"><span className="font-serif font-bold text-[#1F1E1D] dark:text-[#EDE8E1]">MicroOptix</span><span className="mx-2">·</span>Electricity intelligence<span className="mx-2">·</span>Weather-aware demand analysis</footer>
+  </div>;
 }
