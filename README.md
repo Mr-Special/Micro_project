@@ -44,11 +44,23 @@ That leaves **57 model features**:
 
 The notebook fills missing feature and target values with their training-data medians. Because the dataset exceeds 30,000 rows, it samples 20,000 rows with `random_state=42`, then uses an 80/20 train/test split with `random_state=42` (16,000 training rows and 4,000 test rows).
 
-### Candidate models and selected artifact
+The notebook does not standardize or scale the numeric columns before fitting. It fits directly on the prepared feature values, so inference must preserve the model's feature order and compatible units. The backend uses the artifact's `feature_names_in_` to build that order.
 
-The notebook evaluates Random Forest, Gradient Boosting, Ridge Regression, Extra Trees, and an ARIMA(1,1,1) time-series baseline. It selects the candidate with the highest R-squared, excluding ARIMA, and serializes it as `overall_best_electricity_model.pkl`.
+### Candidate models and evaluation
 
-The checked-in artifact is a **Ridge regression model with L2 regularization (`alpha=1.0`)**. The performance values returned by the backend are:
+The notebook fits four supervised regressors on the same 20,000-row sample and its 80/20 random split. It also reports an ARIMA(1,1,1) univariate baseline. The notebook compares R-squared, mean absolute error (MAE), and root mean squared error (RMSE). R-squared was used to select the saved model among the four supervised regressors; ARIMA was excluded from that selection.
+
+| Evaluated model | Notebook setup | What it tests |
+| --- | --- | --- |
+| **Random Forest Regressor** | 50 trees, maximum depth 12, `random_state=42`, all available CPU cores | A bagged tree ensemble that models nonlinear weather/state interactions and averages trees to reduce variance. |
+| **Gradient Boosting Regressor** | 50 boosting stages, maximum depth 6, `random_state=42` | Trees are added sequentially to improve on the current ensemble's residual errors; tests a compact boosted-tree alternative. |
+| **Ridge Regression** | `alpha=1.0` | Linear regression with an L2 coefficient penalty. It provides a regularized linear baseline across the weather, calendar, and state features. |
+| **Extra Trees Regressor** | 50 trees, maximum depth 12, `random_state=42`, all available CPU cores | A randomized tree ensemble. It tests whether additional split randomness improves generalization relative to Random Forest. |
+| **ARIMA(1,1,1) baseline** | One autoregressive term, one difference, one moving-average term | A univariate time-series comparison using only the target sequence; it does not use weather or state features. |
+
+The four supervised models use the same held-out test split. The ARIMA score is **not directly comparable**: the notebook creates its own 80/20 sequence split for ARIMA, and that sequence comes from `y_sample`, which was created by random sampling rows. It is therefore not a chronological forecast test. The notebook also does not show a separate chronological holdout or cross-validation run.
+
+The checked-in artifact is a **Ridge regression model with L2 regularization (`alpha=1.0`)**. Its R-squared is the highest among the four supervised candidates in this notebook run. The comparison values returned by the backend are:
 
 | Model | R-squared | MAE (MU) | RMSE (MU) |
 | --- | ---: | ---: | ---: |
@@ -57,6 +69,8 @@ The checked-in artifact is a **Ridge regression model with L2 regularization (`a
 | Extra Trees Regressor | 0.910072 | 24.952475 | 36.726177 |
 | Random Forest Regressor | 0.909672 | 26.549918 | 36.807879 |
 | ARIMA(1,1,1) baseline | -0.000621 | 97.284195 | 120.441801 |
+
+Ridge narrowly leads Gradient Boosting on the recorded test metrics and has the lowest MAE and RMSE in this comparison. Its simpler linear form is also compact to load and evaluate. These results identify the best candidate in this notebook experiment; they do not establish that Ridge will outperform the other models on a future-year or location-based holdout.
 
 The displayed `+/- 19.04 MU` uncertainty is the saved-model MAE used as a simple error indicator. It is not a calibrated per-prediction confidence interval.
 
